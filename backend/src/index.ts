@@ -11,11 +11,13 @@ import './routes/uploads.ts';
 
 seedDefaultConfig();
 
-const port = Number(process.env.PORT ?? 4000);
+// API_PORT wins over PORT so the API and the kiosk can't collide when both are
+// launched from the same shell.
+const port = Number(process.env.API_PORT ?? process.env.PORT ?? 4000);
 
 const server = Bun.serve({
   port,
-  hostname: process.env.HOST ?? '0.0.0.0',
+  hostname: process.env.HOST ?? process.env.API_HOST ?? '0.0.0.0',
   // Payment and upload requests should never hang the kiosk indefinitely.
   idleTimeout: 30,
   fetch: handle,

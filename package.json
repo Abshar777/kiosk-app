@@ -9,11 +9,12 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "bun run --filter '*' dev",
-    "dev:api": "bun run --cwd backend dev",
-    "dev:web": "bun run --cwd frontend dev",
+    "dev": "bun scripts/dev.mjs api & bun scripts/dev.mjs web",
+    "dev:api": "bun scripts/dev.mjs api",
+    "dev:web": "bun scripts/dev.mjs web",
     "build": "bun run --cwd frontend build",
     "seed": "bun run --cwd backend seed",
+    "sync:launch": "bun scripts/sync-launch.mjs",
     "typecheck": "bun run --cwd backend typecheck && bun run --cwd frontend typecheck"
   },
   "devDependencies": {

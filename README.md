@@ -120,10 +120,34 @@ Behaviour worth knowing:
 
 ## Environment
 
+All ports live in the root `.env` and nothing hard-codes them. `scripts/env.mjs`
+resolves them once; `scripts/dev.mjs` hands each server the `PORT` it already
+understands, and `NEXT_PUBLIC_API_URL` is derived from `API_PORT` unless set
+explicitly.
+
+```bash
+API_PORT=4000
+WEB_PORT=3000
+API_HOST=0.0.0.0
+```
+
+`.claude/launch.json` needs literal ports (JSON can't interpolate), so it is
+**generated**. After changing a port:
+
+```bash
+bun run sync:launch
+```
+
+> Note: the resolver deliberately ignores a bare `PORT`. A launcher sets `PORT`
+> for the process it starts, so honouring it made the web server resolve the
+> API's port to its own — the kiosk then called itself and every request 404'd.
+
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `PORT` | `4000` | API port |
-| `NEXT_PUBLIC_API_URL` | `http://localhost:4000` | API origin used by the kiosk |
+| `API_PORT` | `4000` | API port |
+| `WEB_PORT` | `3000` | Kiosk port |
+| `API_HOST` | `0.0.0.0` | API bind address |
+| `NEXT_PUBLIC_API_URL` | derived from `API_PORT` | Override when the API is on another host |
 | `RAZORPAY_KEY_ID` / `_SECRET` | — | Razorpay credentials |
 | `ADMIN_TOKEN` | unset | When set, admin endpoints require `X-Admin-Token` |
 | `PAYMENT_LATENCY_MS` | `1200` | Simulated gateway latency |
