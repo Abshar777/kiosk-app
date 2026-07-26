@@ -89,6 +89,35 @@ Razorpay's own test cards are in
 
 ---
 
+## Receipt printing
+
+The receipt **prints automatically** when the confirmation screen appears. It is
+rendered as a self-contained HTML document (no external assets, so it prints
+identically offline) into a hidden iframe.
+
+By default the browser shows its print dialog. For a real kiosk you want silent
+printing to the attached printer — launch Chrome with:
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --kiosk \
+  --kiosk-printing \
+  http://localhost:3000
+```
+
+`--kiosk-printing` makes `window.print()` go straight to the default printer
+with no dialog. Set the receipt printer as the system default first.
+
+Behaviour worth knowing:
+
+- The auto-return countdown **pauses while printing** so the kiosk can't reset
+  mid-job.
+- It prints **once** per enrollment; **Print again** on the confirmation screen
+  reprints on demand.
+- Turn it off per-site with `kiosk.autoPrintReceipt: false` (via
+  `PATCH /api/admin/config`), and tune `kiosk.autoPrintDelayMs` if the printer
+  needs the screen settled first.
+
 ## Environment
 
 | Variable | Default | Purpose |

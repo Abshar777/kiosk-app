@@ -2,9 +2,8 @@
 
 import { Button } from "@heroui/react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
 import { useConfig } from "@/app/providers";
-import { GlobeIcon, MoonIcon, SunIcon } from "@/components/icons";
+import { GlobeIcon } from "@/components/icons";
 import { LOCALE_NAMES, type Locale } from "@/lib/i18n/dictionaries";
 import { useI18n } from "@/lib/i18n/provider";
 
@@ -19,18 +18,6 @@ import { useI18n } from "@/lib/i18n/provider";
 export function KioskHeader() {
   const { config } = useConfig();
   const { locale, setLocale, t } = useI18n();
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    setIsDark(document.documentElement.classList.contains("dark"));
-  }, []);
-
-  const toggleTheme = () => {
-    const next = !isDark;
-    setIsDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    window.localStorage.setItem("kiosk.theme", next ? "dark" : "light");
-  };
 
   const available = (config.kiosk.availableLanguages as Locale[]).filter(
     (code) => code in LOCALE_NAMES,
@@ -66,16 +53,9 @@ export function KioskHeader() {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Button
-              aria-label={t("nav.theme")}
-              className="bg-surface-sunken text-ink h-12 w-12 rounded-full p-0"
-              isIconOnly
-              onPress={toggleTheme}
-              variant="ghost"
-            >
-              {isDark ? <SunIcon /> : <MoonIcon />}
-            </Button>
-
+            {/* No theme switcher: a kiosk runs one fixed look, chosen by the
+                operator, not by whoever walks up to it. The dark tokens still
+                exist and follow the OS setting. */}
             {available.length > 1 && (
               <Button
                 aria-label={`${t("nav.language")}: ${LOCALE_NAMES[nextLocale]}`}

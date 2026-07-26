@@ -49,15 +49,23 @@ export function ConfirmationPanel({
     }
   }, [receipt]);
 
-  // Auto-print once per enrollment. The ref guard matters: React 19 StrictMode
-  // runs effects twice in development, and nobody wants two receipts.
+  // Auto-print once per enrollment.
+  //
+  // The guard is checked inside the timeout, not at the top of the effect.
+  // StrictMode runs effects twice: guarding early would set the flag on the
+  // first run, have its timer cleared by the cleanup, and then bail out of the
+  // second run — printing nothing at all.
   const hasAutoPrinted = useRef(false);
   useEffect(() => {
-    if (!autoPrint || hasAutoPrinted.current) return;
-    hasAutoPrinted.current = true;
+    if (!autoPrint) return;
 
     // Let the confirmation paint before the print dialog steals focus.
-    const timer = setTimeout(() => void print(), autoPrintDelayMs);
+    const timer = setTimeout(() => {
+      if (hasAutoPrinted.current) return;
+      hasAutoPrinted.current = true;
+      void print();
+    }, autoPrintDelayMs);
+
     return () => clearTimeout(timer);
   }, [autoPrint, autoPrintDelayMs, print]);
 

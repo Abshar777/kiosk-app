@@ -52,6 +52,49 @@ export function loadRazorpay(): Promise<void> {
   return loader;
 }
 
+/** Razorpay Checkout mounts these at document.body level. */
+const GATEWAY_SELECTOR = ".razorpay-container, .razorpay-backdrop, .razorpay-checkout-frame";
+
+/**
+ * Keeps the gateway's overlay interactive while our own dialog is open.
+ *
+ * Our flow runs inside a React Aria modal, and React Aria's `ariaHideOutside`
+ * marks everything outside the dialog as `inert` — including nodes added
+ * *later*, which is exactly what Razorpay does. An inert subtree ignores every
+ * click and touch, so the checkout renders but cannot be used.
+ *
+ * React Aria deliberately skips elements tagged `data-react-aria-top-layer`,
+ * so we tag the gateway's nodes and clear any inert flag already applied. The
+ * observer re-asserts it because React Aria's own observer may run first.
+ *
+ * The alternative — closing our dialog for the duration — would unmount the
+ * flow and lose the student's details.
+ */
+function keepGatewayInteractive(): () => void {
+  const release = (element: HTMLElement) => {
+    element.setAttribute("data-react-aria-top-layer", "true");
+    if (element.inert) element.inert = false;
+    if (element.getAttribute("aria-hidden") === "true") {
+      element.removeAttribute("aria-hidden");
+    }
+  };
+
+  const sweep = () => {
+    document.querySelectorAll<HTMLElement>(GATEWAY_SELECTOR).forEach(release);
+  };
+
+  sweep();
+  const observer = new MutationObserver(sweep);
+  observer.observe(document.body, {
+    attributeFilter: ["inert", "aria-hidden"],
+    attributes: true,
+    childList: true,
+    subtree: true,
+  });
+
+  return () => observer.disconnect();
+}
+
 export type CheckoutOutcome =
   | { status: "success"; payload: RazorpaySuccess }
   | { status: "failed"; reason: string }
@@ -72,10 +115,13 @@ export function openRazorpayCheckout(
       return;
     }
 
+    const stopKeepingInteractive = keepGatewayInteractive();
+
     let settled = false;
     const settle = (outcome: CheckoutOutcome) => {
       if (settled) return;
       settled = true;
+      stopKeepingInteractive();
       resolve(outcome);
     };
 

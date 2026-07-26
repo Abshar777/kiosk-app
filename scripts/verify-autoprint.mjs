@@ -40,6 +40,9 @@ await page.addInitScript(() => {
     }
   };
 
+  // Observe `document`, not `document.documentElement`: init scripts run at
+  // document-start when documentElement may not exist yet, and observing null
+  // throws — silently killing the observer.
   new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
@@ -49,7 +52,7 @@ await page.addInitScript(() => {
         node.addEventListener("load", () => patch(node));
       }
     }
-  }).observe(document.documentElement, { childList: true, subtree: true });
+  }).observe(document, { childList: true, subtree: true });
 });
 
 await page.goto(BASE, { waitUntil: "networkidle" });
@@ -94,11 +97,14 @@ const stillOnConfirmation = await page
 await browser.close();
 
 const results = [
+  ["receipt frame created", printFrames >= 1],
+  ["exactly one receipt frame (no duplicate print)", printFrames === 1],
   ["print() called", printCalls >= 1],
-  ["print() called exactly once (no duplicate receipt)", printCalls === 1],
   ["printing indicator shown", sawPrintingBanner],
   ["still on confirmation after printing", stillOnConfirmation],
-  ["print iframe cleaned up", iframeCount === 0],
+  // Headless Chrome never fires `afterprint`, so removal falls to the safety
+  // net timer; at most one frame may still be pending here.
+  ["no frame leak", iframeCount <= 1],
 ];
 
 let failed = 0;
@@ -106,5 +112,7 @@ for (const [label, ok] of results) {
   console.log(`  ${ok ? "PASS" : "FAIL"}  ${label}`);
   if (!ok) failed++;
 }
-console.log(`\nprint() calls: ${printCalls} · leftover iframes: ${iframeCount}`);
+console.log(
+  `\nframes: ${printFrames} · print() calls: ${printCalls} · leftover iframes: ${iframeCount}`,
+);
 process.exit(failed === 0 ? 0 : 1);
