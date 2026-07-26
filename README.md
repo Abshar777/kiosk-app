@@ -142,12 +142,30 @@ bun run sync:launch
 > for the process it starts, so honouring it made the web server resolve the
 > API's port to its own — the kiosk then called itself and every request 404'd.
 
+### Pointing the kiosk at the API
+
+The browser calls **same-origin `/api/...`**, and the Next server proxies those
+to the API (`rewrites` in `next.config.ts`). Two consequences worth knowing:
+
+- **No CORS.** All traffic is same-origin as far as the browser is concerned.
+- **No rebuild to move the API.** `API_URL` is read when the server boots, not
+  when the bundle is compiled, so one build runs against any API:
+
+  ```bash
+  API_URL=http://192.168.1.50:4000 bun run --cwd frontend start
+  ```
+
+Set `NEXT_PUBLIC_API_URL` **only** if the browser must call the API directly on
+another origin. It disables the proxy, is inlined into the bundle at build time
+(so it cannot be changed without recompiling), and requires CORS on the API.
+
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `API_PORT` | `4000` | API port |
 | `WEB_PORT` | `3000` | Kiosk port |
 | `API_HOST` | `0.0.0.0` | API bind address |
-| `NEXT_PUBLIC_API_URL` | derived from `API_PORT` | Override when the API is on another host |
+| `API_URL` | `http://localhost:$API_PORT` | Proxy target — **runtime**, no rebuild |
+| `NEXT_PUBLIC_API_URL` | _unset_ | Direct browser→API origin. **Build-time**; needs CORS |
 | `RAZORPAY_KEY_ID` / `_SECRET` | — | Razorpay credentials |
 | `ADMIN_TOKEN` | unset | When set, admin endpoints require `X-Admin-Token` |
 | `PAYMENT_LATENCY_MS` | `1200` | Simulated gateway latency |

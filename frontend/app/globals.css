@@ -2,7 +2,24 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
-@custom-variant dark (&:where(.dark, .dark *));
+/*
+ * Light theme only.
+ *
+ * The kiosk ships one fixed look. The `dark` variant is redefined to match
+ * nothing so that any stray `dark:` utility — ours or one inside HeroUI —
+ * compiles to a rule that can never apply, rather than silently reintroducing
+ * a second theme.
+ */
+@custom-variant dark (&:where(.__never-dark));
+
+/*
+ * Pin the browser's own UI to light. Without this, a tablet whose OS is in dark
+ * mode paints native scrollbars, autofill backgrounds and default form controls
+ * dark inside our light page — a leak no amount of CSS token work fixes.
+ */
+:root {
+  color-scheme: light;
+}
 
 /*
  * Design tokens — see design.md. Never hard-code a hex value in a component;
@@ -51,31 +68,6 @@
   /* Kiosk touch ergonomics — see design.md §6. */
   --spacing-touch: 64px;
   --spacing-touch-lg: 68px;
-}
-
-/* Dark theme: invert the surfaces, keep the hues. */
-.dark {
-  --color-canvas: #111419;
-  --color-shell: #0b0e13;
-  --color-surface: #1a1e26;
-  --color-surface-sunken: #232833;
-  --color-surface-accent: #252e3d;
-
-  --color-ink: #f3f5f8;
-  --color-ink-muted: #9ba5b4;
-  --color-ink-subtle: #7a8494;
-
-  --color-slate: #f3f5f8;
-  --color-slate-hover: #ffffff;
-
-  --color-brand: #4f7fe0;
-
-  --color-hairline: #2c323d;
-
-  --color-ok-bg: #0e9f6e1f;
-  --color-bad-bg: #dc26261f;
-  --color-warn-bg: #d977061f;
-  --color-note-bg: #2563eb1f;
 }
 
 /*
@@ -135,12 +127,6 @@
      * row) clips its left and right edges. Inset rings can't be clipped.
      */
     --ring-offset-width: 0px;
-  }
-
-  .dark {
-    /* Inverted slate needs dark text to stay readable. */
-    --accent-foreground: var(--color-ink);
-    --default-foreground: var(--color-ink);
   }
 }
 
@@ -346,15 +332,11 @@
   /*
    * public/logo.png is a white wordmark with teal accents, drawn for a dark
    * background — it is invisible on our white header. `brightness(0)` flattens
-   * every opaque pixel to black for light surfaces; dark mode inverts that back
-   * to white. Using the real asset beats re-drawing it.
+   * every opaque pixel to black regardless of its original hue, which is why it
+   * works on a multi-colour mark where `invert()` would turn the teal magenta.
    */
   .brand-logo {
     filter: brightness(0);
-  }
-
-  .dark .brand-logo {
-    filter: brightness(0) invert(1);
   }
 }
 

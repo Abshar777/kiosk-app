@@ -19,17 +19,24 @@ if (target !== "api" && target !== "web") {
 
 const { apiPort, webPort, apiHost, apiUrl } = resolveConfig();
 
+// The web server gets API_URL (runtime, used by next.config's proxy) — not
+// NEXT_PUBLIC_API_URL, which would be baked into the bundle at build time.
 const env =
   target === "api"
     ? { ...process.env, PORT: String(apiPort), API_PORT: String(apiPort), HOST: apiHost }
-    : { ...process.env, PORT: String(webPort), NEXT_PUBLIC_API_URL: apiUrl };
+    : {
+        ...process.env,
+        PORT: String(webPort),
+        API_PORT: String(apiPort),
+        API_URL: apiUrl,
+      };
 
 const workspace = target === "api" ? "backend" : "frontend";
 
 console.log(
   target === "api"
     ? `  api → http://localhost:${apiPort}`
-    : `  web → http://localhost:${webPort}  (API: ${apiUrl})`,
+    : `  web → http://localhost:${webPort}  (proxying /api → ${apiUrl})`,
 );
 
 const child = spawn("bun", ["run", "--cwd", workspace, "dev"], {

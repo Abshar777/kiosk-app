@@ -49,17 +49,16 @@ const ConfigContext = createContext<ConfigValue>({
 
 export const useConfig = () => useContext(ConfigContext);
 
-function ThemeSync() {
+/**
+ * The kiosk is light-only, so nothing syncs a theme. This clears the `dark`
+ * class and the stored preference left behind by earlier builds — without it a
+ * tablet that had already run one would keep the class on <html> forever, since
+ * nothing else removes it.
+ */
+function ThemeReset() {
   useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const apply = () => {
-      const stored = window.localStorage.getItem("kiosk.theme");
-      const isDark = stored ? stored === "dark" : media.matches;
-      document.documentElement.classList.toggle("dark", isDark);
-    };
-    apply();
-    media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
+    document.documentElement.classList.remove("dark");
+    window.localStorage.removeItem("kiosk.theme");
   }, []);
   return null;
 }
@@ -91,7 +90,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ConfigContext.Provider value={value}>
       <I18nProvider defaultLocale={value.config.kiosk.defaultLanguage as Locale}>
-        <ThemeSync />
+        <ThemeReset />
         <Ripple />
         {children}
       </I18nProvider>

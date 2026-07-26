@@ -55,23 +55,25 @@ the strongest contrast and leaves the dark blue free to mean *brand* rather than
 | `--color-warning` / `-bg` | `#D97706` / `#FEF4E6` | Pending payment, low seats |
 | `--color-info` / `-bg` | `#2563EB` / `#E7EEF9` | Online mode badge, neutral notices |
 
-### 2.3 Dark theme
+### 2.3 Light theme only
 
-Dark mode is required for the admin panel and for kiosks in low-light lobbies.
-Invert the *surfaces*, keep the *hues*.
+**There is no dark theme.** A kiosk ships one fixed look chosen by the operator,
+not one that changes with whatever the tablet's OS happens to be set to. Three
+things enforce that, and all three are needed:
 
-| Token | Hex |
-| --- | --- |
-| `--color-canvas` | `#111419` |
-| `--color-surface` | `#1A1E26` |
-| `--color-surface-sunken` | `#232833` |
-| `--color-surface-accent` | `#252E3D` |
-| `--color-text` | `#F3F5F8` |
-| `--color-text-muted` | `#9BA5B4` |
-| `--color-primary` | `#E7EAEF` (light slate — inverts to a light button with dark text) |
-| `--color-border` | `#2C323D` |
+```css
+@custom-variant dark (&:where(.__never-dark));  /* stray dark: utilities can never match */
+:root { color-scheme: light; }                  /* native scrollbars/autofill stay light */
+```
 
-Brand mint and status hues stay the same; only their `-bg` tints darken to ~12% opacity of the hue.
+plus a `ThemeReset` effect that strips any `.dark` class and the stored
+`kiosk.theme` key left by an earlier build.
+
+`color-scheme` is the one people forget: without it a tablet in OS dark mode
+paints native scrollbars, autofill backgrounds and default form controls dark
+inside an otherwise light page, and no amount of token work fixes it.
+
+Do not add `dark:` utilities. They will compile to rules that never apply.
 
 ### 2.4 Rules
 
@@ -85,8 +87,7 @@ background. It is invisible on our white header, so the `.brand-logo` class reco
 than shipping a second asset:
 
 ```css
-.brand-logo      { filter: brightness(0); }            /* flatten to solid black */
-.dark .brand-logo{ filter: brightness(0) invert(1); }  /* back to white */
+.brand-logo { filter: brightness(0); }  /* flatten every opaque pixel to black */
 ```
 
 `brightness(0)` drives every opaque pixel to black regardless of its original hue, which is why
@@ -476,7 +477,7 @@ Before any screen is called done:
 - [ ] No text below 18px in the kiosk flow
 - [ ] No `pl-*` / `text-left` — logical properties only
 - [ ] Renders correctly at `dir="rtl"` with Arabic copy
-- [ ] Works in light **and** dark theme
+- [ ] Uses tokens only — no hard-coded hex, no `dark:` utilities
 - [ ] Primary action is full-width at the bottom of the card
 - [ ] No hover-only information
 - [ ] Zero hard-coded hex values

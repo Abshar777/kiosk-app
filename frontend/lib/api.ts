@@ -23,8 +23,30 @@ import type {
   VerifyPaymentRequest,
 } from "@course-lms/shared";
 
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+/**
+ * Absolute API origin, or "" to talk to our own origin.
+ *
+ * `NEXT_PUBLIC_*` values are inlined into the bundle at BUILD time, so setting
+ * one pins the API address into the compiled JS — a build could never be
+ * re-pointed at another server without recompiling. That's wrong for a kiosk
+ * that ships to sites with different hosts.
+ *
+ * So the default is empty: the browser calls same-origin `/api/...`, and
+ * next.config.ts proxies to the real API using a RUNTIME env var. Set
+ * NEXT_PUBLIC_API_URL only when the browser must reach the API directly on
+ * another origin (which then needs CORS on the API).
+ */
+const CONFIGURED_API_URL = process.env.NEXT_PUBLIC_API_URL?.trim() ?? "";
+
+/** Base for URL resolution — same-origin unless an absolute origin was given. */
+function apiBase(): string {
+  if (CONFIGURED_API_URL) return CONFIGURED_API_URL;
+  if (typeof window !== "undefined") return window.location.origin;
+  // Only reached during prerender, where nothing actually fetches.
+  return "http://localhost";
+}
+
+export const API_URL = CONFIGURED_API_URL;
 
 /**
  * Error thrown by every failed request. `fields` carries per-field validation
@@ -56,7 +78,7 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { body, query, headers, ...rest } = options;
 
-  const url = new URL(path, API_URL);
+  const url = new URL(path, apiBase());
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value === null || value === undefined || value === "") continue;
     url.searchParams.set(key, String(value));
@@ -235,7 +257,7 @@ export const adminApi = {
 
   /** Returns the URL for the CSV export so the browser can download directly. */
   enrollmentsExportUrl: (query: Record<string, string | number | undefined> = {}) => {
-    const url = new URL("/api/admin/enrollments/export", API_URL);
+    const url = new URL("/api/admin/enrollments/export", apiBase());
     for (const [key, value] of Object.entries(query)) {
       if (value === undefined || value === "") continue;
       url.searchParams.set(key, String(value));
@@ -286,7 +308,7 @@ export const adminApi = {
   uploadImage: async (file: File): Promise<{ url: string }> => {
     const form = new FormData();
     form.append("file", file);
-    const response = await fetch(new URL("/api/admin/uploads", API_URL), {
+    const response = await fetch(new URL("/api/admin/uploads", apiBase()), {
       method: "POST",
       headers: adminHeaders(),
       body: form,
@@ -306,4 +328,4 @@ export const adminApi = {
 
 /** Turns a relative /uploads path from the API into an absolute URL. */
 export const resolveImageUrl = (url: string): string =>
-  url.startsWith("/uploads/") ? new URL(url, API_URL).toString() : url;
+  url.startsWith("/uploads/") && API_URL ? new URL(url, API_URL).toString() : url;

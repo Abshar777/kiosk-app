@@ -20,7 +20,6 @@ const en = {
   "nav.browse": "Browse courses",
   "nav.admin": "Admin",
   "nav.language": "Language",
-  "nav.theme": "Theme",
   "nav.support": "Need help? Call",
 
   "listing.heading": "Find your next course",
@@ -181,7 +180,6 @@ const ar: Record<TranslationKey, string> = {
   "nav.browse": "تصفح الدورات",
   "nav.admin": "لوحة التحكم",
   "nav.language": "اللغة",
-  "nav.theme": "المظهر",
   "nav.support": "تحتاج مساعدة؟ اتصل بـ",
 
   "listing.heading": "اعثر على دورتك القادمة",
