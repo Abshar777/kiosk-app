@@ -1,0 +1,12 @@
+
+# Build output
+.next/
+node_modules/
+
+# Local data & secrets
+backend/data/
+.env
+.env.local
+
+# Generated
+screenshots/

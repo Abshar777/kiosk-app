@@ -1,0 +1,471 @@
+/* Import order matters: Tailwind first, then HeroUI's styles. */
+@import "tailwindcss";
+@import "@heroui/styles";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens — see design.md. Never hard-code a hex value in a component;
+ * add a token here instead.
+ */
+@theme {
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+  --font-arabic: "IBM Plex Sans Arabic", "Almarai", system-ui, sans-serif;
+
+  --color-canvas: #f2f4f7;
+  --color-shell: #373e4b;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #edf0f4;
+  --color-surface-accent: #e7eef9;
+
+  --color-ink: #191c22;
+  --color-ink-muted: #6b7280;
+  --color-ink-subtle: #98a1b0;
+
+  /* Primary actions are black on the grey canvas — maximum contrast, and it
+     lets the dark-blue brand accent stay reserved for brand moments. */
+  --color-slate: #101418;
+  --color-slate-hover: #000000;
+
+  --color-brand: #14306b;
+  --color-brand-ink: #ffffff;
+
+  --color-hairline: #e3e7ed;
+
+  --color-ok: #0e9f6e;
+  --color-ok-bg: #e4f7ef;
+  --color-bad: #dc2626;
+  --color-bad-bg: #fdecec;
+  --color-warn: #d97706;
+  --color-warn-bg: #fef4e6;
+  --color-note: #2563eb;
+  --color-note-bg: #e7eef9;
+
+  --radius-card: 24px;
+  --radius-control: 16px;
+  --radius-image: 16px;
+
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 8px 24px rgb(16 24 40 / 0.06);
+  --shadow-modal: 0 24px 64px rgb(16 24 40 / 0.18);
+
+  /* Kiosk touch ergonomics — see design.md §6. */
+  --spacing-touch: 64px;
+  --spacing-touch-lg: 68px;
+}
+
+/* Dark theme: invert the surfaces, keep the hues. */
+.dark {
+  --color-canvas: #111419;
+  --color-shell: #0b0e13;
+  --color-surface: #1a1e26;
+  --color-surface-sunken: #232833;
+  --color-surface-accent: #252e3d;
+
+  --color-ink: #f3f5f8;
+  --color-ink-muted: #9ba5b4;
+  --color-ink-subtle: #7a8494;
+
+  --color-slate: #f3f5f8;
+  --color-slate-hover: #ffffff;
+
+  --color-brand: #4f7fe0;
+
+  --color-hairline: #2c323d;
+
+  --color-ok-bg: #0e9f6e1f;
+  --color-bad-bg: #dc26261f;
+  --color-warn-bg: #d977061f;
+  --color-note-bg: #2563eb1f;
+}
+
+/*
+ * Retheme HeroUI v3 by remapping its semantic variables onto our design tokens.
+ * This is the systemic fix: `variant="primary"` reads --accent, secondary and
+ * tertiary read --default, fields read --field-*. Overriding here means we never
+ * have to fight component styles with utility classes.
+ *
+ * These rules come after `@import "@heroui/styles"`, so at equal specificity
+ * they win.
+ */
+@layer base {
+  :root {
+    --background: var(--color-canvas);
+    --foreground: var(--color-ink);
+    --muted: var(--color-ink-muted);
+
+    --surface: var(--color-surface);
+    --surface-secondary: var(--color-surface-sunken);
+    --surface-tertiary: var(--color-surface-sunken);
+    --overlay: var(--color-surface);
+
+    /* Primary buttons and focus rings take the Tabby dark slate. */
+    --accent: var(--color-slate);
+    --accent-foreground: #ffffff;
+    --accent-hover: var(--color-slate-hover);
+    --focus: var(--color-slate);
+
+    /* Secondary / tertiary buttons take the pale blue. */
+    --default: var(--color-surface-accent);
+    --default-foreground: var(--color-ink);
+
+    /* Borderless filled fields — design.md §7.2. */
+    --field-background: var(--color-surface-sunken);
+    --field-foreground: var(--color-ink);
+    --field-placeholder: var(--color-ink-subtle);
+    --field-border: transparent;
+
+    --border: var(--color-hairline);
+    --separator: var(--color-hairline);
+    --link: var(--color-ink);
+
+    --success: var(--color-ok);
+    --success-foreground: #ffffff;
+    --warning: var(--color-warn);
+    --warning-foreground: #ffffff;
+    --danger: var(--color-bad);
+    --danger-foreground: #ffffff;
+
+    --radius: 12px;
+    --field-radius: var(--radius-control);
+    --backdrop: rgb(16 24 40 / 0.48);
+
+    /*
+     * Draw focus rings INSIDE the control. An offset ring is painted outside
+     * the element's box, so any scrollable ancestor (a modal body, the filter
+     * row) clips its left and right edges. Inset rings can't be clipped.
+     */
+    --ring-offset-width: 0px;
+  }
+
+  .dark {
+    /* Inverted slate needs dark text to stay readable. */
+    --accent-foreground: var(--color-ink);
+    --default-foreground: var(--color-ink);
+  }
+}
+
+@layer components {
+  /*
+   * Kiosk sizing: HeroUI ships 40–44px controls, which are too small for a
+   * touch screen. design.md §6 requires 64px minimum.
+   */
+  .button {
+    font-weight: 600;
+    border-radius: var(--radius-control);
+  }
+
+  .button--lg {
+    min-height: 64px;
+    padding-inline: 28px;
+    font-size: 17px;
+  }
+
+  .field,
+  .input,
+  .textfield__input,
+  .select__trigger,
+  .search-field__group,
+  .input-group {
+    border-radius: var(--radius-control);
+  }
+
+  /*
+   * Inset focus/invalid rings for every field surface, so the ring is never
+   * clipped by a scroll container and never spills outside the control.
+   * design.md §7.2 asks for a 2px inset ring.
+   *
+   * Use `:is()` and NOT `:where()` — `:where()` contributes zero specificity,
+   * so HeroUI's own `.input:focus` (0,2,0) would win and paint an outset ring.
+   */
+  .input:is(:focus, :focus-visible, [data-focused="true"], [data-focus-visible="true"]),
+  .textarea:is(:focus, [data-focused="true"]),
+  .select__trigger:is([data-focused="true"], [data-focus-visible="true"], [data-pressed="true"]),
+  .search-field__group:is(:focus-within, [data-focused="true"], [data-focus-visible="true"]),
+  .input-group:is(:focus-within, [data-focused="true"], [data-focus-visible="true"]) {
+    outline: none !important;
+    outline-offset: 0 !important;
+    box-shadow: inset 0 0 0 2px var(--color-slate) !important;
+  }
+
+  .input:is([data-invalid="true"]),
+  .textarea:is([data-invalid="true"]),
+  .search-field__group:is([data-invalid="true"]),
+  .input-group:is([data-invalid="true"]) {
+    outline: none !important;
+    box-shadow: inset 0 0 0 2px var(--color-bad) !important;
+  }
+
+  /* Select triggers laid out as flex default to `align-items: normal`, which
+     top-aligns the value once the control is taller than its text. */
+  .select__trigger,
+  .search-field__group,
+  .input-group {
+    align-items: center;
+  }
+
+  /*
+   * Selection and focus rings for tappable tiles (gateways, payment methods,
+   * batches, course cards).
+   *
+   * Tailwind's `ring-*` paints a box-shadow OUTSIDE the element, so inside any
+   * scroll container — the dialog body, the filter row — the left and right
+   * edges get clipped and the ring looks broken. Drawing it inset keeps the
+   * whole outline inside the element's own box, so it can never be clipped.
+   */
+  .ring-selected {
+    box-shadow: inset 0 0 0 2px var(--color-slate);
+  }
+
+  .ring-focus:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 3px color-mix(in oklab, var(--color-slate) 45%, transparent);
+  }
+
+  /*
+   * Touch ripple.
+   *
+   * HeroUI v3 dropped v2's ripple in favour of a scale-on-press. On a kiosk
+   * that press is easy to miss under a fingertip, so we add a ripple that
+   * expands from the actual touch point — it confirms the tap landed even when
+   * the finger covers the control.
+   *
+   * Drawn as a ::after pseudo-element rather than an injected <span>: these
+   * elements are React-owned, and appending real DOM children to them risks
+   * React's removeChild throwing during reconciliation. A pseudo-element is
+   * invisible to React entirely.
+   */
+  .button,
+  [data-ripple] {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .button::after,
+  [data-ripple]::after {
+    content: "";
+    position: absolute;
+    left: var(--ripple-x, 50%);
+    top: var(--ripple-y, 50%);
+    width: var(--ripple-size, 240px);
+    height: var(--ripple-size, 240px);
+    margin-left: calc(var(--ripple-size, 240px) / -2);
+    margin-top: calc(var(--ripple-size, 240px) / -2);
+    border-radius: 9999px;
+    background: currentColor;
+    opacity: 0;
+    transform: scale(0);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .button[data-rippling="true"]::after,
+  [data-ripple][data-rippling="true"]::after {
+    animation: kiosk-ripple 560ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  }
+
+  /* Keep label and icons above the ripple. */
+  .button > *,
+  [data-ripple] > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  @keyframes kiosk-ripple {
+    0% {
+      transform: scale(0);
+      opacity: 0.3;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .button::after,
+    [data-ripple]::after {
+      display: none;
+    }
+  }
+
+  .card {
+    border-radius: var(--radius-card);
+  }
+
+  .modal__dialog,
+  .drawer__dialog {
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-modal);
+  }
+
+  /* HeroUI squares off the bottom corners of a bottom-placed drawer because it
+     assumes an edge-to-edge sheet. Ours floats inset, so round all four. */
+  .drawer__content--bottom .drawer__dialog,
+  .drawer__dialog {
+    border-end-start-radius: var(--radius-card);
+    border-end-end-radius: var(--radius-card);
+  }
+}
+
+@layer base {
+  html {
+    height: 100%;
+    /* Stop iOS/Android inflating type in landscape kiosk mode. */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100%;
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  [dir="rtl"] body {
+    font-family: var(--font-arabic);
+  }
+
+  /* A kiosk has no text worth selecting and no long-press menu worth showing. */
+  .kiosk-nonselectable {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Prices and IDs must not jitter as digits change. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background-color: var(--color-brand);
+    color: var(--color-brand-ink);
+  }
+
+  /*
+   * public/logo.png is a white wordmark with teal accents, drawn for a dark
+   * background — it is invisible on our white header. `brightness(0)` flattens
+   * every opaque pixel to black for light surfaces; dark mode inverts that back
+   * to white. Using the real asset beats re-drawing it.
+   */
+  .brand-logo {
+    filter: brightness(0);
+  }
+
+  .dark .brand-logo {
+    filter: brightness(0) invert(1);
+  }
+}
+
+@layer components {
+  /*
+   * Typography scale from design.md §3.3 — size carries the hierarchy.
+   *
+   * The kiosk sizes are tuned for a 1280px landscape screen. On a phone a 44px
+   * headline eats a third of the viewport and wraps to three lines, so each
+   * step drops one notch below 768px while keeping the same proportions.
+   */
+  .type-display {
+    font-size: 30px;
+    line-height: 36px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .type-title {
+    font-size: 24px;
+    line-height: 30px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .type-heading {
+    font-size: 20px;
+    line-height: 26px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .type-subheading {
+    font-size: 17px;
+    line-height: 24px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .type-body-lg {
+    font-size: 16px;
+    line-height: 25px;
+  }
+
+  @media (min-width: 768px) {
+    .type-display {
+      font-size: 44px;
+      line-height: 48px;
+    }
+    .type-title {
+      font-size: 32px;
+      line-height: 38px;
+    }
+    .type-heading {
+      font-size: 24px;
+      line-height: 30px;
+    }
+    .type-subheading {
+      font-size: 20px;
+      line-height: 28px;
+    }
+    .type-body-lg {
+      font-size: 18px;
+      line-height: 28px;
+    }
+  }
+  .type-body {
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .type-label {
+    font-size: 15px;
+    line-height: 20px;
+    font-weight: 600;
+  }
+  .type-caption {
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  /* Arabic sits taller at the same size — see design.md §9. */
+  [dir="rtl"] .type-display {
+    line-height: 60px;
+  }
+  [dir="rtl"] .type-title {
+    line-height: 46px;
+  }
+  [dir="rtl"] .type-heading {
+    line-height: 36px;
+  }
+
+  /* Clamp helpers for card copy. */
+  .clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
