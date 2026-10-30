@@ -1,11 +1,15 @@
 import { mkdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { extname, join } from 'node:path';
 import { hasValidSession } from '../lib/auth.ts';
 import { badRequest, json, notFound, unauthorized } from '../lib/http.ts';
 import { newId } from '../lib/ids.ts';
 import { route } from '../router.ts';
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR ?? new URL('../../data/uploads/', import.meta.url).pathname;
+// fileURLToPath, not `.pathname` — see the note in db.ts; a space in the
+// checkout path would otherwise create a literal "%20" directory.
+const UPLOAD_DIR =
+  process.env.UPLOAD_DIR ?? fileURLToPath(new URL('../../data/uploads/', import.meta.url));
 mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const ALLOWED_TYPES: Record<string, string> = {

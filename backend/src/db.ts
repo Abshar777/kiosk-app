@@ -1,8 +1,13 @@
 import { Database } from 'bun:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const DB_PATH = process.env.DATABASE_PATH ?? new URL('../data/kiosk.sqlite', import.meta.url).pathname;
+// fileURLToPath, not `.pathname`: a URL's pathname is percent-encoded, so a
+// checkout in a directory containing a space resolved to a literal
+// "course%20lms" folder and silently created the database there.
+const DB_PATH =
+  process.env.DATABASE_PATH ?? fileURLToPath(new URL('../data/kiosk.sqlite', import.meta.url));
 
 mkdirSync(dirname(DB_PATH), { recursive: true });
 

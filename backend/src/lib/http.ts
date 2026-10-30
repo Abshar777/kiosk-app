@@ -1,10 +1,22 @@
 import type { ApiError } from '@course-lms/shared';
 
+/**
+ * The kiosk and admin call the API same-origin through the Next proxy, so CORS
+ * normally never applies. It only matters if someone points the browser
+ * straight at the API with NEXT_PUBLIC_API_URL.
+ *
+ * In that case `*` is not usable: a browser refuses a wildcard origin on a
+ * credentialed request, and the admin session is a cookie. So credentials are
+ * only advertised when CORS_ORIGIN names a real origin.
+ */
+const corsOrigin = process.env.CORS_ORIGIN ?? '*';
+
 const CORS_HEADERS: Record<string, string> = {
-  'Access-Control-Allow-Origin': process.env.CORS_ORIGIN ?? '*',
+  'Access-Control-Allow-Origin': corsOrigin,
   'Access-Control-Allow-Methods': 'GET,POST,PATCH,PUT,DELETE,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Admin-Token',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Max-Age': '86400',
+  ...(corsOrigin === '*' ? {} : { 'Access-Control-Allow-Credentials': 'true', Vary: 'Origin' }),
 };
 
 export function json(data: unknown, init: ResponseInit = {}): Response {

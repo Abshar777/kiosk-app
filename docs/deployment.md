@@ -86,6 +86,27 @@ chrome --kiosk --kiosk-printing --noerrdialogs \
 `--kiosk-printing` is what makes the receipt print silently. Set the receipt printer as
 the **system default** first, or Chrome prints to whatever is.
 
+### Upgrading an existing install
+
+Schema changes need nothing — every table is `CREATE TABLE IF NOT EXISTS`, so new ones
+appear on boot. Data written under older assumptions does need a pass:
+
+```bash
+git pull
+bun install
+bun run migrate                 # INR -> AED on existing rows; safe to re-run
+bun run --cwd frontend build
+# restart both services
+```
+
+`migrate` is idempotent — running it twice reports "nothing to do".
+
+> If your checkout path contains a **space**, check for a stray directory with `%20` in
+> its name beside it. A path bug (fixed in this release) percent-encoded the data
+> directory, so the live database may be sitting in `your%20folder/backend/data/`.
+> Move it to the real `backend/data/` before restarting, or the app will start on an
+> empty database.
+
 ### Backups
 
 Everything lives in `backend/data/kiosk.sqlite`. Back it up on a schedule — it holds

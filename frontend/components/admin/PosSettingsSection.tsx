@@ -247,8 +247,8 @@ export function SelectSetting({
 /*
  * The two terminal-setup endpoints are not in lib/api.ts yet, so this file
  * repeats its contract locally rather than editing a shared module: same-origin
- * /api unless an absolute origin was compiled in, the admin token header when
- * one exists, and ApiRequestError on failure so the existing error UI applies.
+ * /api unless an absolute origin was compiled in, the admin session cookie, and
+ * ApiRequestError on failure so the existing error UI applies.
  */
 function adminUrl(path: string): string {
   const origin =
@@ -257,17 +257,17 @@ function adminUrl(path: string): string {
 }
 
 async function posRequest<T>(path: string, body?: unknown): Promise<T> {
-  const token = process.env.NEXT_PUBLIC_ADMIN_TOKEN;
   const hasBody = body !== undefined;
 
   let response: Response;
   try {
     response = await fetch(adminUrl(path), {
       method: hasBody ? "POST" : "GET",
-      headers: {
-        ...(token ? { "X-Admin-Token": token } : {}),
-        ...(hasBody ? { "Content-Type": "application/json" } : {}),
-      },
+      // The admin session is an httpOnly cookie, so it must be sent explicitly;
+      // there is no token to attach. This previously read
+      // NEXT_PUBLIC_ADMIN_TOKEN, which no longer authenticates anything.
+      credentials: "include",
+      headers: hasBody ? { "Content-Type": "application/json" } : {},
       ...(hasBody ? { body: JSON.stringify(body) } : {}),
     });
   } catch {

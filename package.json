@@ -2,7 +2,7 @@
   "name": "course-lms",
   "private": true,
   "version": "0.1.0",
-  "description": "Self-service course enrollment kiosk (PWA) — Next.js + HeroUI v3 frontend, Bun backend",
+  "description": "Self-service course enrollment kiosk (PWA) \u2014 Next.js + HeroUI v3 frontend, Bun backend",
   "workspaces": [
     "shared",
     "backend",
@@ -15,7 +15,8 @@
     "build": "bun run --cwd frontend build",
     "seed": "bun run --cwd backend seed",
     "sync:launch": "bun scripts/sync-launch.mjs",
-    "typecheck": "bun run --cwd backend typecheck && bun run --cwd frontend typecheck"
+    "typecheck": "bun run --cwd backend typecheck && bun run --cwd frontend typecheck",
+    "migrate": "bun run --cwd backend migrate"
   },
   "devDependencies": {
     "playwright-core": "^1.62.0",

@@ -8,7 +8,8 @@
     "start": "bun src/index.ts",
     "seed": "bun src/seed.ts",
     "reset": "rm -f data/kiosk.sqlite && bun src/seed.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "migrate": "bun src/migrate.ts"
   },
   "dependencies": {
     "@course-lms/shared": "workspace:*",
