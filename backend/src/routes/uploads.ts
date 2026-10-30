@@ -1,5 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { extname, join } from 'node:path';
+import { hasValidSession } from '../lib/auth.ts';
 import { badRequest, json, notFound, unauthorized } from '../lib/http.ts';
 import { newId } from '../lib/ids.ts';
 import { route } from '../router.ts';
@@ -18,8 +19,9 @@ const ALLOWED_TYPES: Record<string, string> = {
 const MAX_BYTES = 5 * 1024 * 1024;
 
 route.post('/api/admin/uploads', async ({ req }) => {
-  const expected = process.env.ADMIN_TOKEN;
-  if (expected && req.headers.get('X-Admin-Token') !== expected) throw unauthorized();
+  // Same fail-closed rule as every other admin route — an unauthenticated
+  // upload endpoint is a free file drop onto the kiosk.
+  if (!hasValidSession(req)) throw unauthorized('Sign in to continue');
 
   // Inferred rather than annotated: Bun's FormData and undici's differ, and an
   // explicit `FormData` annotation picks the wrong one.

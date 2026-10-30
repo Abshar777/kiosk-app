@@ -10,3 +10,6 @@ backend/data/
 
 # Generated
 screenshots/
+
+# macOS
+.DS_Store

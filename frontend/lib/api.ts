@@ -18,6 +18,9 @@ import type {
   PaymentMethod,
   PaymentResult,
   PopularCourseRow,
+  PosSaleStatus,
+  PosTestResult,
+  SerialPortInfo,
   RecordFailureRequest,
   RevenueReportRow,
   VerifyPaymentRequest,
@@ -184,6 +187,25 @@ export const api = {
       () => undefined,
     ),
 
+  /**
+   * Card-present sale lifecycle. Start returns immediately and the kiosk polls
+   * `posSale` — a customer finding their card outlasts any HTTP timeout.
+   */
+  startPosSale: (enrollmentId: string) =>
+    request<PosSaleStatus>("/api/payments/pos/sale", {
+      method: "POST",
+      body: { enrollmentId },
+    }),
+
+  posSale: (saleId: string) =>
+    request<PosSaleStatus>(`/api/payments/pos/sale/${encodeURIComponent(saleId)}`),
+
+  cancelPosSale: (saleId: string) =>
+    request<PosSaleStatus>(
+      `/api/payments/pos/sale/${encodeURIComponent(saleId)}/cancel`,
+      { method: "POST" },
+    ),
+
   receipt: (enrollmentId: string) =>
     request<EnrollmentReceipt>(
       `/api/enrollments/${encodeURIComponent(enrollmentId)}/receipt`,
@@ -194,13 +216,14 @@ export const api = {
 // Admin API
 // ---------------------------------------------------------------------------
 
-const adminHeaders = (): Record<string, string> => {
-  const token = process.env.NEXT_PUBLIC_ADMIN_TOKEN;
-  return token ? { "X-Admin-Token": token } : {};
-};
-
+/**
+ * Admin calls authenticate with an httpOnly session cookie, so there is no
+ * token to attach here — and deliberately so. The previous design read
+ * NEXT_PUBLIC_ADMIN_TOKEN, which Next.js inlines into the client bundle, which
+ * meant the admin secret shipped in readable JavaScript to every visitor.
+ */
 const adminRequest = <T>(path: string, options: RequestOptions = {}) =>
-  request<T>(path, { ...options, headers: { ...adminHeaders(), ...(options.headers ?? {}) } });
+  request<T>(path, { ...options, credentials: "include" });
 
 export interface EnrollmentListItem extends Enrollment {
   paymentStatus: string | null;
@@ -214,6 +237,26 @@ export interface PaymentListItem extends Payment {
   courseName: string;
   enrollmentCode: string;
 }
+
+export const adminAuth = {
+  login: (password: string) =>
+    request<{ ok: true }>("/api/admin/login", {
+      method: "POST",
+      body: { password },
+      credentials: "include",
+    }),
+
+  logout: () =>
+    request<{ ok: true }>("/api/admin/logout", {
+      method: "POST",
+      credentials: "include",
+    }),
+
+  session: () =>
+    request<{ isAuthenticated: boolean }>("/api/admin/session", {
+      credentials: "include",
+    }),
+};
 
 export const adminApi = {
   stats: () => adminRequest<AdminStats>("/api/admin/stats"),
@@ -305,12 +348,24 @@ export const adminApi = {
     adminRequest<{ items: ActivityLog[] }>("/api/admin/logs", { query }).then((r) => r.items),
 
   /** Uploads a course image and returns its public URL. */
+  serialPorts: () =>
+    adminRequest<{ items: SerialPortInfo[] }>("/api/admin/pos/serial-ports").then(
+      (r) => r.items,
+    ),
+
+  /** Probes the terminal with on-screen settings, which may not be saved yet. */
+  testPos: (config: Record<string, unknown>) =>
+    adminRequest<PosTestResult>("/api/admin/pos/test", {
+      method: "POST",
+      body: config,
+    }),
+
   uploadImage: async (file: File): Promise<{ url: string }> => {
     const form = new FormData();
     form.append("file", file);
     const response = await fetch(new URL("/api/admin/uploads", apiBase()), {
       method: "POST",
-      headers: adminHeaders(),
+      credentials: "include",
       body: form,
     });
     if (!response.ok) {

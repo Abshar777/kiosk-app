@@ -4,11 +4,13 @@ import type { Locale } from "./i18n/dictionaries";
  * Prices and IDs always render with Latin digits, even in Arabic — Arabic-Indic
  * numerals on a printed receipt cause support calls. See design.md §9.
  */
-const NUMERIC_LOCALE = "en-IN";
+// en-AE, not en-IN: dirhams group in thousands, where en-IN would render
+// AED 4,643,500 as the lakh-grouped 46,43,500.
+const NUMERIC_LOCALE = "en-AE";
 
 export function formatCurrency(
   amount: number,
-  currency = "INR",
+  currency = "AED",
   options: { compact?: boolean } = {},
 ): string {
   return new Intl.NumberFormat(NUMERIC_LOCALE, {
@@ -23,7 +25,7 @@ export const formatNumber = (value: number): string =>
   new Intl.NumberFormat(NUMERIC_LOCALE).format(value);
 
 export function formatDate(iso: string, locale: Locale = "en"): string {
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-AE" : "en-IN", {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-AE" : "en-AE", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -32,7 +34,7 @@ export function formatDate(iso: string, locale: Locale = "en"): string {
 }
 
 export function formatDateTime(iso: string, locale: Locale = "en"): string {
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-AE" : "en-IN", {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-AE" : "en-AE", {
     day: "numeric",
     month: "short",
     year: "numeric",

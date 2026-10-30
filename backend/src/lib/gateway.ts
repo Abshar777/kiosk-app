@@ -51,6 +51,11 @@ export function validateInstrument(
   const errors = new FieldErrors();
 
   switch (method) {
+    // The card machine collects and validates the card on its own hardware, so
+    // there is nothing for us to check and nothing sensitive to mask.
+    case 'card_present':
+      return { instrument: 'Card machine', errors };
+
     case 'upi': {
       const upiId = (details.upiId ?? '').trim();
       if (!upiId) {

@@ -22,6 +22,16 @@ export function listGateways(): GatewayOption[] {
       isTestMode: env.isRazorpayTestMode,
     },
     {
+      id: 'pos_terminal',
+      name: 'Card machine',
+      description: 'Pay by card at the terminal beside the kiosk',
+      methods: ['card_present'],
+      // Listed only once an operator has configured it — offering a card
+      // machine that is not plugged in strands the customer mid-flow.
+      isAvailable: getConfig().pos.isEnabled,
+      isTestMode: getConfig().pos.transport === 'mock',
+    },
+    {
       id: 'simulated',
       name: 'Offline demo',
       description: 'Simulated gateway — no real payment is taken',

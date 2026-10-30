@@ -8,6 +8,10 @@ import './routes/public.ts';
 import './routes/gateway.ts';
 import './routes/admin.ts';
 import './routes/uploads.ts';
+import './routes/pos.ts';
+import './routes/auth.ts';
+import { reportUnsettledSales } from './lib/pos/sale.ts';
+import { announceAdminPassword } from './lib/auth.ts';
 
 seedDefaultConfig();
 
@@ -32,6 +36,11 @@ const server = Bun.serve({
 
 console.log(`  Course LMS API listening on http://localhost:${server.port}`);
 console.log(`  Health check: http://localhost:${server.port}/api/health`);
+
+// A card sale left in flight by a crash may already be charged — say so loudly
+// on the way up rather than letting it sit unnoticed in the database.
+reportUnsettledSales();
+announceAdminPassword();
 console.log(
   `  Razorpay: ${
     env.isRazorpayConfigured

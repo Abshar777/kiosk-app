@@ -140,3 +140,144 @@ export const MoonIcon = ({ className, size = 20 }: IconProps) => (
     <path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10Z" />
   </svg>
 );
+
+export const GridIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <rect x="3" y="3" width="7" height="7" rx="2" />
+    <rect x="14" y="3" width="7" height="7" rx="2" />
+    <rect x="3" y="14" width="7" height="7" rx="2" />
+    <rect x="14" y="14" width="7" height="7" rx="2" />
+  </svg>
+);
+
+export const BookIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v14H6.5A2.5 2.5 0 0 0 4 19.5Z" />
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20v4H6.5A2.5 2.5 0 0 1 4 19.5Z" />
+  </svg>
+);
+
+export const UsersIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20c0-3.4 2.9-5.5 6.5-5.5s6.5 2.1 6.5 5.5" />
+    <path d="M16 5.2a3.5 3.5 0 0 1 0 5.6M18 14.9c2.1.7 3.5 2.3 3.5 5.1" />
+  </svg>
+);
+
+export const ChartIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M4 20V4M4 20h16" />
+    <path d="M8 20v-6M13 20V8M18 20v-9" />
+  </svg>
+);
+
+export const SettingsIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M12 2.5 13.4 5a7.6 7.6 0 0 1 2.2.9l2.6-.7 1.6 2.8-1.9 1.8a7.7 7.7 0 0 1 0 2.4l1.9 1.8-1.6 2.8-2.6-.7a7.6 7.6 0 0 1-2.2.9L12 21.5 10.6 19a7.6 7.6 0 0 1-2.2-.9l-2.6.7-1.6-2.8 1.9-1.8a7.7 7.7 0 0 1 0-2.4L4.2 8l1.6-2.8 2.6.7a7.6 7.6 0 0 1 2.2-.9Z" />
+  </svg>
+);
+
+export const PlusIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
+
+export const PencilIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />
+    <path d="m15 5 4 4" />
+  </svg>
+);
+
+export const TrashIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M4 7h16M10 4h4M6 7l1 13h10l1-13" />
+    <path d="M10 11v6M14 11v6" />
+  </svg>
+);
+
+export const UploadIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M12 16V4M7 8l5-5 5 5M4 21h16" />
+  </svg>
+);
+
+export const FilterIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M3 5h18l-7 8v6l-4 2v-8Z" />
+  </svg>
+);
+
+/** Both chevrons point at a fixed side; add `rtl:rotate-180` where they mean back/forward. */
+export const ChevronLeftIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="m15 5-7 7 7 7" />
+  </svg>
+);
+
+export const ChevronRightIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="m9 5 7 7-7 7" />
+  </svg>
+);
+
+export const RefreshIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M20 11a8 8 0 0 0-13.7-5.2L3 9" />
+    <path d="M4 13a8 8 0 0 0 13.7 5.2L21 15" />
+    <path d="M3 4v5h5M21 20v-5h-5" />
+  </svg>
+);
+
+export const ExternalLinkIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M14 4h6v6M20 4l-8 8" />
+    <path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" />
+  </svg>
+);
+
+export const LogoutIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" />
+    <path d="M16 8l4 4-4 4M20 12H9" />
+  </svg>
+);
+
+export const MenuIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M4 7h16M4 12h16M4 17h16" />
+  </svg>
+);
+
+export const CheckCircleIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="m8.5 12.5 2.5 2.5 4.5-5" />
+  </svg>
+);
+
+export const AlertTriangleIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M12 4.5 21 19.5H3Z" />
+    <path d="M12 10v4M12 17v.01" />
+  </svg>
+);
+
+export const XCircleIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="m9 9 6 6M15 9l-6 6" />
+  </svg>
+);
+
+export const WifiOffIcon = ({ className, size = 20 }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M3 3l18 18" />
+    <path d="M9.5 16.5a3.5 3.5 0 0 1 5 0" />
+    <path d="M6 13a8.5 8.5 0 0 1 3-2M18 13a8.5 8.5 0 0 0-6.8-2.4" />
+    <path d="M2.5 9.5A13 13 0 0 1 7 6.7M21.5 9.5a13 13 0 0 0-8.4-3.4" />
+  </svg>
+);

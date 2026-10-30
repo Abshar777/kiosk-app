@@ -118,6 +118,31 @@ Behaviour worth knowing:
   `PATCH /api/admin/config`), and tune `kiosk.autoPrintDelayMs` if the printer
   needs the screen settled first.
 
+## Admin access
+
+The admin panel at `/admin` is behind a password. The API checks it server-side and
+issues a **signed, httpOnly session cookie** — nothing secret is ever sent to the
+browser's JavaScript.
+
+If `ADMIN_PASSWORD` is not set, the API generates one at startup and prints it:
+
+```
+  ⚠ No ADMIN_PASSWORD set. Generated one for this run:
+
+        admin password:  agy2-j7he-7nb5
+
+    Set ADMIN_PASSWORD in .env to make it permanent.
+```
+
+Set `ADMIN_PASSWORD` in `.env` to pin it, and `ADMIN_SESSION_SECRET` to keep sessions
+alive across restarts (otherwise a restart signs admins out).
+
+> An earlier version read `NEXT_PUBLIC_ADMIN_TOKEN` in the browser. That is gone:
+> `NEXT_PUBLIC_*` values are inlined into the client bundle, so the admin secret
+> shipped in readable JavaScript to every visitor. Auth is now cookie-based and
+> **fails closed** — with no password configured, admin endpoints return 401 rather
+> than running unauthenticated.
+
 ## Environment
 
 All ports live in the root `.env` and nothing hard-codes them. `scripts/env.mjs`

@@ -9,14 +9,14 @@ export type CourseMode = (typeof COURSE_MODES)[number];
 export const COURSE_LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
 export type CourseLevel = (typeof COURSE_LEVELS)[number];
 
-export const PAYMENT_METHODS = ['upi', 'card', 'netbanking'] as const;
+export const PAYMENT_METHODS = ['upi', 'card', 'netbanking', 'card_present'] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 /**
  * Payment gateways the kiosk can hand off to. `simulated` never touches a
  * network and exists so the flow stays demonstrable offline.
  */
-export const PAYMENT_GATEWAYS = ['razorpay', 'simulated'] as const;
+export const PAYMENT_GATEWAYS = ['razorpay', 'simulated', 'pos_terminal'] as const;
 export type PaymentGatewayId = (typeof PAYMENT_GATEWAYS)[number];
 
 export interface GatewayOption {
@@ -193,10 +193,102 @@ export interface KioskConfig {
   currencySymbol: string;
 }
 
+// ---------------------------------------------------------------------------
+// Card-present terminal (POS / ECR)
+// ---------------------------------------------------------------------------
+
+/**
+ * How the backend reaches the card machine. Both require the backend to run on
+ * the kiosk itself — the browser can never talk to a terminal directly, and a
+ * backend on another host has no route to a LAN-local or cabled device.
+ */
+export const POS_TRANSPORTS = ['lan', 'serial', 'mock'] as const;
+export type PosTransport = (typeof POS_TRANSPORTS)[number];
+
+export interface PosLanConfig {
+  /** Terminal's address on the kiosk LAN. */
+  host: string;
+  port: number;
+}
+
+export interface PosSerialConfig {
+  /** Device path: /dev/tty.usbmodem… on macOS/Linux, COM3 on Windows. */
+  path: string;
+  baudRate: number;
+  dataBits: 7 | 8;
+  stopBits: 1 | 2;
+  parity: 'none' | 'even' | 'odd';
+}
+
+export interface PosConfig {
+  isEnabled: boolean;
+  transport: PosTransport;
+  lan: PosLanConfig;
+  serial: PosSerialConfig;
+  /** Terminal identifiers issued by the acquirer. */
+  merchantId: string;
+  terminalId: string;
+  /**
+   * How long to wait for the customer to tap/insert before giving up. Terminals
+   * enforce their own timeout too; this is the backend's safety net.
+   */
+  saleTimeoutSeconds: number;
+  /** Seconds between status polls while a sale is in progress. */
+  pollIntervalMs: number;
+  /** Let the terminal print its own charge slip in addition to our receipt. */
+  terminalPrintsSlip: boolean;
+}
+
+/** A serial device offered to the operator in admin settings. */
+export interface SerialPortInfo {
+  path: string;
+  manufacturer: string | null;
+  serialNumber: string | null;
+}
+
+/** Result of the admin "Test connection" action. */
+export interface PosTestResult {
+  ok: boolean;
+  transport: PosTransport;
+  message: string;
+  /** Round-trip time of the probe, when one completed. */
+  latencyMs: number | null;
+}
+
+/** Lifecycle of a card-present sale, polled by the kiosk while it runs. */
+export const POS_SALE_STATES = [
+  'connecting',
+  'waiting_for_card',
+  'processing',
+  'approved',
+  'declined',
+  'cancelled',
+  'error',
+] as const;
+export type PosSaleState = (typeof POS_SALE_STATES)[number];
+
+export interface PosSaleStatus {
+  saleId: string;
+  enrollmentId: string;
+  state: PosSaleState;
+  /** Operator-facing line mirroring what the terminal is showing. */
+  message: string;
+  amount: number;
+  currency: string;
+  /** Terminal's own reference, stored before prompting so a crash is recoverable. */
+  terminalRef: string | null;
+  /** Masked PAN / scheme, e.g. "VISA ****4242". Never the full number. */
+  instrument: string | null;
+  authCode: string | null;
+  failureReason: string | null;
+  isTerminal: boolean;
+}
+
 export interface AppConfig {
   academy: AcademyConfig;
   kiosk: KioskConfig;
   enabledPaymentMethods: PaymentMethod[];
+  pos: PosConfig;
 }
 
 // ---------------------------------------------------------------------------
@@ -312,6 +404,12 @@ export const LOG_EVENTS = [
   'payment.succeeded',
   'payment.failed',
   'payment.refunded',
+  // Card-present sales get their own actions so a terminal problem is
+  // distinguishable from a gateway decline in the activity log.
+  'pos.sale.started',
+  'pos.sale.failed',
+  'pos.sale.error',
+  'pos.sale.unsettled',
   'course.created',
   'course.updated',
   'course.deleted',

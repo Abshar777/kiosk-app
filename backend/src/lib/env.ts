@@ -54,7 +54,7 @@ export const env = {
     return process.env.RAZORPAY_KEY_SECRET;
   },
   get razorpayCurrency(): string {
-    return process.env.RAZORPAY_CURRENCY ?? 'INR';
+    return process.env.RAZORPAY_CURRENCY ?? 'AED';
   },
   get isRazorpayConfigured(): boolean {
     return Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);

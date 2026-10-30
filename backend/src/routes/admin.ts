@@ -17,6 +17,7 @@ import { listLogs, log } from '../repo/logs.ts';
 import * as payments from '../repo/payments.ts';
 import * as reports from '../repo/reports.ts';
 import { getConfig, updateConfig } from '../repo/settings.ts';
+import { hasValidSession } from '../lib/auth.ts';
 import { route, type RouteContext } from '../router.ts';
 
 /**
@@ -24,10 +25,10 @@ import { route, type RouteContext } from '../router.ts';
  * open, which is what you want on a workshop LAN; set it in production.
  */
 function requireAdmin({ req }: RouteContext): void {
-  const expected = process.env.ADMIN_TOKEN;
-  if (!expected) return;
-  const provided = req.headers.get('X-Admin-Token');
-  if (provided !== expected) throw unauthorized();
+  // Fails CLOSED. The previous version returned early when no token was
+  // configured, which left every admin endpoint — student names, mobile
+  // numbers, refunds — open to anyone who could reach the port.
+  if (!hasValidSession(req)) throw unauthorized('Sign in to continue');
 }
 
 const admin =
@@ -459,6 +460,7 @@ route.patch(
         academy: body.academy as never,
         kiosk: body.kiosk as never,
         enabledPaymentMethods: body.enabledPaymentMethods as never,
+        pos: body.pos as never,
       }),
     );
   }),

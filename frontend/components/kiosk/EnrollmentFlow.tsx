@@ -7,9 +7,10 @@ import type {
   GatewayOption,
   PaymentGatewayId,
   PaymentMethod,
+  PosSaleStatus,
 } from "@course-lms/shared";
 import { Button, Input, Label, ListBox, Select, Spinner, TextField } from "@heroui/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useConfig } from "@/app/providers";
 import {
   AlertIcon,
@@ -24,16 +25,23 @@ import { ApiRequestError, api } from "@/lib/api";
 import { formatCurrency, formatMobile } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/provider";
 import { loadRazorpay, openRazorpayCheckout } from "@/lib/razorpay";
+import { CardMachinePanel } from "./CardMachinePanel";
 import { ConfirmationPanel } from "./ConfirmationPanel";
 
 export type Stage =
   | "details"
   | "gateway"
   | "instrument"
+  | "card_machine"
   | "processing"
   | "failed"
   | "success";
 
+/**
+ * Tiles for methods the kiosk collects itself. `card_present` is deliberately
+ * absent — the card machine prompts for the card on its own screen, so there is
+ * nothing for us to render.
+ */
 const METHOD_META = {
   upi: { icon: <UpiIcon />, labelKey: "payment.upi", hintKey: "payment.upiHint" },
   card: { icon: <CardIcon />, labelKey: "payment.card", hintKey: "payment.cardHint" },
@@ -43,6 +51,11 @@ const METHOD_META = {
     hintKey: "payment.netbankingHint",
   },
 } as const;
+
+/** Methods the kiosk renders a tile for — `card_present` is prompted on the device. */
+type TileableMethod = keyof typeof METHOD_META;
+
+const hasTile = (method: PaymentMethod): method is TileableMethod => method in METHOD_META;
 
 /** Mirrors the server's rules so the kiosk fails fast without a round-trip. */
 function validateDetails(fullName: string, mobile: string) {
@@ -193,6 +206,8 @@ export function EnrollmentView({
   const [enrollmentId, setEnrollmentId] = useState<string | null>(null);
   const [gateways, setGateways] = useState<GatewayOption[]>([]);
   const [gateway, setGateway] = useState<PaymentGatewayId>("razorpay");
+  const [posStatus, setPosStatus] = useState<PosSaleStatus | null>(null);
+  const posSaleIdRef = useRef<string | null>(null);
   const [method, setMethod] = useState<PaymentMethod>("upi");
   const [instrument, setInstrument] = useState<Record<string, string>>({});
   const [busyMessage, setBusyMessage] = useState<string>("");
@@ -344,13 +359,98 @@ export function EnrollmentView({
     }
   }, [enrollmentId, instrument, method, t]);
 
+  // ---- step 2c: card machine (POS terminal) -------------------------------
+  //
+  // The sale runs on the physical terminal, so the kiosk starts it and then
+  // polls. A customer hunting for their card outlasts any HTTP timeout, which
+  // is why this is not one long request.
+  const payWithCardMachine = useCallback(async () => {
+    if (!enrollmentId) return;
+    setStage("card_machine");
+    setPosStatus(null);
+
+    try {
+      const started = await api.startPosSale(enrollmentId);
+      setPosStatus(started);
+      posSaleIdRef.current = started.saleId;
+    } catch (error) {
+      setFailureReason(
+        error instanceof ApiRequestError ? error.message : t("gateway.loadFailed"),
+      );
+      setStage("failed");
+    }
+  }, [enrollmentId, t]);
+
   const startPayment = useCallback(() => {
     if (gateway === "simulated") {
       setStage("instrument");
       return;
     }
+    if (gateway === "pos_terminal") {
+      void payWithCardMachine();
+      return;
+    }
     void payWithHostedGateway();
-  }, [gateway, payWithHostedGateway]);
+  }, [gateway, payWithCardMachine, payWithHostedGateway]);
+
+  const cancelCardMachine = useCallback(() => {
+    const saleId = posSaleIdRef.current;
+    if (saleId) void api.cancelPosSale(saleId).catch(() => undefined);
+  }, []);
+
+  /**
+   * Follows the sale until the terminal reaches a final state.
+   *
+   * Polls on a self-rescheduling timeout rather than setInterval: a slow
+   * response must not stack up overlapping requests against a terminal that is
+   * mid-authorisation. A transient poll failure is ignored — losing one reply
+   * is not a reason to abandon a sale the customer is actively paying for.
+   */
+  useEffect(() => {
+    if (stage !== "card_machine") return;
+    const saleId = posSaleIdRef.current;
+    if (!saleId) return;
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const poll = async () => {
+      try {
+        const next = await api.posSale(saleId);
+        if (cancelled) return;
+        setPosStatus(next);
+        if (next.isTerminal) return;
+      } catch {
+        if (cancelled) return;
+      }
+      timer = setTimeout(poll, config.pos?.pollIntervalMs ?? 1000);
+    };
+
+    timer = setTimeout(poll, 600);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [config.pos?.pollIntervalMs, stage]);
+
+  /** Approval is the only path that advances; everything else stays put. */
+  const finishCardMachine = useCallback(
+    async (final: PosSaleStatus) => {
+      if (final.state !== "approved") return;
+      try {
+        setBusyMessage(t("gateway.verifying"));
+        setStage("processing");
+        setReceipt(await api.receipt(final.enrollmentId));
+        setStage("success");
+      } catch (error) {
+        setFailureReason(
+          error instanceof ApiRequestError ? error.message : t("gateway.loadFailed"),
+        );
+        setStage("failed");
+      }
+    },
+    [t],
+  );
 
   const retry = useCallback(() => {
     setFailureReason(null);
@@ -532,7 +632,7 @@ export function EnrollmentView({
 
             <h3 className="type-label text-ink mt-6">{t("payment.method")}</h3>
             <div className="mt-3 space-y-3">
-              {methods.map((option) => {
+              {methods.filter(hasTile).map((option) => {
                 const meta = METHOD_META[option];
                 return (
                   <ChoiceTile
@@ -664,6 +764,15 @@ export function EnrollmentView({
       )}
 
       {/* ---------------------------------------------------- processing ---- */}
+      {stage === "card_machine" && (
+        <CardMachinePanel
+          onCancel={cancelCardMachine}
+          onDone={(final) => void finishCardMachine(final)}
+          onRetry={() => void payWithCardMachine()}
+          status={posStatus}
+        />
+      )}
+
       {stage === "processing" && (
         <div className="flex min-h-[380px] flex-col items-center justify-center gap-5 text-center">
           <Spinner size="xl" />

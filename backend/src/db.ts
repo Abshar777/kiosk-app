@@ -40,7 +40,7 @@ db.exec(`
     has_certificate    INTEGER NOT NULL DEFAULT 1,
     price              REAL NOT NULL,
     original_price     REAL,
-    currency           TEXT NOT NULL DEFAULT 'INR',
+    currency           TEXT NOT NULL DEFAULT 'AED',
     image_url          TEXT NOT NULL DEFAULT '',
     is_active          INTEGER NOT NULL DEFAULT 1,
     rating             REAL,
@@ -61,7 +61,7 @@ db.exec(`
     full_name      TEXT NOT NULL,
     mobile         TEXT NOT NULL,
     amount         REAL NOT NULL,
-    currency       TEXT NOT NULL DEFAULT 'INR',
+    currency       TEXT NOT NULL DEFAULT 'AED',
     status         TEXT NOT NULL DEFAULT 'draft',
     created_at     TEXT NOT NULL,
     confirmed_at   TEXT
@@ -74,7 +74,7 @@ db.exec(`
     method          TEXT NOT NULL,
     status          TEXT NOT NULL DEFAULT 'pending',
     amount          REAL NOT NULL,
-    currency        TEXT NOT NULL DEFAULT 'INR',
+    currency        TEXT NOT NULL DEFAULT 'AED',
     gateway_ref     TEXT,
     instrument      TEXT,
     failure_reason  TEXT,
@@ -88,6 +88,35 @@ db.exec(`
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+
+  -- A card-present sale in flight on the physical terminal.
+  --
+  -- This exists for ONE reason: a terminal can approve a card while our process
+  -- dies before the payment row is written. The sale is persisted with its
+  -- reference BEFORE the customer is prompted, so startup reconciliation can
+  -- find any sale left mid-flight and settle it instead of silently keeping the
+  -- customer's money.
+  CREATE TABLE IF NOT EXISTS pos_sales (
+    id              TEXT PRIMARY KEY,
+    enrollment_id   TEXT NOT NULL REFERENCES enrollments(id),
+    reference       TEXT NOT NULL UNIQUE,
+    state           TEXT NOT NULL,
+    message         TEXT NOT NULL DEFAULT '',
+    amount          REAL NOT NULL,
+    currency        TEXT NOT NULL,
+    transport       TEXT NOT NULL,
+    terminal_ref    TEXT,
+    instrument      TEXT,
+    auth_code       TEXT,
+    failure_reason  TEXT,
+    -- Set once the payment row exists, so reconciliation knows this one is done.
+    settled_at      TEXT,
+    created_at      TEXT NOT NULL,
+    updated_at      TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_pos_sales_open
+    ON pos_sales (settled_at) WHERE settled_at IS NULL;
 
   CREATE TABLE IF NOT EXISTS activity_logs (
     id          TEXT PRIMARY KEY,

@@ -13,6 +13,9 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "Course Enrollment Kiosk",
   description: "Browse courses, enroll and pay in a few taps.",
+  // The Delta mark as an SVG: one scalable file for every icon size, and it
+  // inherits ink colour via currentColor instead of needing a filter.
+  icons: { icon: "/delta-mark.svg" },
 };
 
 export const viewport: Viewport = {

@@ -80,7 +80,7 @@ export function I18nProvider({
   return (
     <I18nContext.Provider value={value}>
       {/* Drives React Aria's own locale-aware formatting and RTL behaviour. */}
-      <AriaI18nProvider locale={locale === "ar" ? "ar-AE" : "en-IN"}>
+      <AriaI18nProvider locale={locale === "ar" ? "ar-AE" : "en-AE"}>
         {children}
       </AriaI18nProvider>
     </I18nContext.Provider>

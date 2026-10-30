@@ -54,7 +54,7 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export interface RazorpayOrder {
   id: string;
-  /** Amount in the smallest currency unit (paise for INR). */
+  /** Amount in the smallest currency unit (fils for AED). */
   amount: number;
   currency: string;
   receipt: string;
