@@ -81,14 +81,20 @@ export function validateMobile(value: unknown, errors: FieldErrors): NormalizedM
     return { normalized: '', digits: '' };
   }
 
-  const defaultCode = process.env.DEFAULT_COUNTRY_CODE ?? '91';
-  // A bare national number (no +, no access prefix) gets the configured country code.
+  const defaultCode = process.env.DEFAULT_COUNTRY_CODE ?? '971';
+
+  // A bare national number (no +, no access prefix) gets the configured country
+  // code. Strip a leading trunk "0" first: UAE numbers are written 050 123 4567
+  // but dial as +971 50 123 4567, and keeping the 0 produced +9710501234567.
+  // Length is not pinned to 10 either — UAE national numbers are 9 digits.
+  const national = !hadPlus && digits.startsWith('0') ? digits.replace(/^0+/, '') : digits;
+
   const normalized =
     hadPlus || digits.startsWith('00')
       ? `+${digits}`
-      : digits.length === 10
-        ? `+${defaultCode}${digits}`
-        : `+${digits}`;
+      : national.length >= 8 && national.length <= 11
+        ? `+${defaultCode}${national}`
+        : `+${national}`;
 
   return { normalized, digits };
 }

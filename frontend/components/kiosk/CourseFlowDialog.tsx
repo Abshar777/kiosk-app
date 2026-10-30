@@ -17,6 +17,11 @@ type View = "details" | "enroll";
  * mount while the first was still unmounting and be dismissed immediately.
  * Swapping the view inside a single dialog removes the race entirely, and it
  * is also the shorter path for the student.
+ *
+ * Tapping a course opens enrolment directly. Most students already know which
+ * course they want by the time they touch the kiosk, so making them clear a
+ * details screen first is a tap that buys nothing. The details are still one
+ * tap away from the enrolment step for anyone who wants to read them.
  */
 export function CourseFlowDialog({
   course,
@@ -29,15 +34,15 @@ export function CourseFlowDialog({
   onOpenChange: (open: boolean) => void;
   onDone: () => void;
 }) {
-  const [view, setView] = useState<View>("details");
+  const [view, setView] = useState<View>("enroll");
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [isCharging, setIsCharging] = useState(false);
 
-  // Each time a course is opened, start at its details with the first
-  // available batch preselected.
+  // Each time a course is opened, start at enrolment with the first available
+  // batch preselected — the student can still change it from the details view.
   useEffect(() => {
     if (!course) return;
-    setView("details");
+    setView("enroll");
     setIsCharging(false);
     setSelectedBatchId(course.batches.find((batch) => batch.seatsAvailable > 0)?.id ?? null);
   }, [course]);
@@ -73,9 +78,12 @@ export function CourseFlowDialog({
           batchId={selectedBatchId}
           course={course}
           key={course.id}
-          onBack={() => setView("details")}
+          // Enrolment is the first screen now, so Back leaves the flow rather
+          // than returning to a details step the student never saw.
+          onBack={() => onOpenChange(false)}
           onDone={onDone}
           onStageChange={(stage) => setIsCharging(stage === "processing")}
+          onViewDetails={() => setView("details")}
         />
       )}
     </ResponsiveDialog>

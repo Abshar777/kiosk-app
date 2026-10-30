@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useConfig } from "@/app/providers";
 import {
   AlertIcon,
+  ChevronRightIcon,
   BankIcon,
   CardIcon,
   CheckIcon,
@@ -184,12 +185,15 @@ export function EnrollmentView({
   course,
   batchId,
   onBack,
+  onViewDetails,
   onDone,
   onStageChange,
 }: {
   course: Course;
   batchId: string | null;
   onBack: () => void;
+  /** Opens the full course details, which enrolment no longer sits behind. */
+  onViewDetails?: () => void;
   onDone: () => void;
   onStageChange?: (stage: Stage) => void;
 }) {
@@ -504,10 +508,28 @@ export function EnrollmentView({
           </Dialog.Header>
 
           <Dialog.Body className="p-0">
-            <div className="bg-surface-sunken rounded-control mt-6 flex items-center justify-between gap-4 p-4">
-              <span className="type-label text-ink min-w-0 truncate">{course.name}</span>
+            {/*
+              * Tappable, because enrolment is now the first screen: this row is
+              * the only route to the full course details, so it has to read as
+              * a control rather than a caption.
+              */}
+            <button
+              className="bg-surface-sunken rounded-control ring-focus mt-6 flex w-full items-center justify-between gap-4 p-4 text-start transition"
+              data-ripple
+              onClick={onViewDetails}
+              type="button"
+            >
+              <span className="min-w-0">
+                <span className="type-label text-ink block truncate">{course.name}</span>
+                {onViewDetails !== undefined && (
+                  <span className="type-caption text-ink-muted mt-0.5 flex items-center gap-1">
+                    {t("enroll.viewDetails")}
+                    <ChevronRightIcon size={14} />
+                  </span>
+                )}
+              </span>
               <span className="type-label text-ink tabular shrink-0">{total}</span>
-            </div>
+            </button>
 
             <div className="mt-6 space-y-4">
               <Field
