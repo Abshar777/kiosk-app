@@ -143,6 +143,27 @@ alive across restarts (otherwise a restart signs admins out).
 > **fails closed** — with no password configured, admin endpoints return 401 rather
 > than running unauthenticated.
 
+### Admin password is rejected
+
+The startup banner says which case you are in:
+
+| Banner | Meaning |
+| --- | --- |
+| `Admin: password set from ADMIN_PASSWORD (… fingerprint …)` | Your configured password is in force. |
+| `⚠ No ADMIN_PASSWORD set` | A throwaway password was generated, and **it changes on every restart**. |
+
+A refused login logs why — lengths and fingerprints of both sides, never the
+passwords themselves — including whether it would match once trimmed.
+
+If a password that should be right keeps failing, check that a stale process is
+not still holding the port. The old one keeps serving, with its old password,
+while the new one fails to bind:
+
+```bash
+lsof -nP -iTCP:4000 -sTCP:LISTEN     # expect exactly one
+lsof -ti:4000 | xargs kill           # if a restart seems to do nothing
+```
+
 ## Environment
 
 All ports live in the root `.env` and nothing hard-codes them. `scripts/env.mjs`

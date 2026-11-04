@@ -1,4 +1,7 @@
-// Loads the repo-root .env before anything reads gateway credentials.
+// MUST be first: this import populates process.env from the repo-root .env, and
+// the modules below read it as they are evaluated.
+import './lib/loadEnv.ts';
+
 import { env } from './lib/env.ts';
 import { handle } from './router.ts';
 import { seedDefaultConfig } from './repo/settings.ts';

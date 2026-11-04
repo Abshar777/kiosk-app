@@ -1,4 +1,4 @@
-import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
+import { randomBytes, createHmac, createHash, timingSafeEqual } from 'node:crypto';
 
 /**
  * Admin authentication.
@@ -34,10 +34,28 @@ const adminPassword = process.env.ADMIN_PASSWORD ?? (generatedPassword as string
  */
 const sessionSecret = process.env.ADMIN_SESSION_SECRET ?? randomBytes(32).toString('hex');
 
+/**
+ * A short, non-reversible fingerprint.
+ *
+ * Enough to tell "the password I typed" from "the password the server has"
+ * without ever writing either to a log. Eight hex characters of SHA-256 cannot
+ * be worked backwards, and a mismatch is all the diagnosis needs.
+ */
+const fingerprint = (value: string): string =>
+  createHash('sha256').update(value).digest('hex').slice(0, 8);
+
 /** Prints the generated password once, so an operator is never locked out. */
 export function announceAdminPassword(): void {
   if (!generatedPassword) {
-    console.log('  Admin: password set from ADMIN_PASSWORD');
+    console.log(
+      `  Admin: password set from ADMIN_PASSWORD ` +
+        `(${adminPassword.length} chars, fingerprint ${fingerprint(adminPassword)})`,
+    );
+    if (!process.env.ADMIN_SESSION_SECRET) {
+      console.log(
+        '  Admin: ADMIN_SESSION_SECRET is not set — every restart will sign admins out.',
+      );
+    }
     return;
   }
   console.log('');
@@ -62,7 +80,40 @@ function matches(a: string, b: string): boolean {
 }
 
 export function isCorrectPassword(candidate: string): boolean {
-  return matches(candidate, adminPassword);
+  const ok = matches(candidate, adminPassword);
+  if (!ok) explainMismatch(candidate);
+  return ok;
+}
+
+/**
+ * Says why a password was refused, without revealing either side.
+ *
+ * The common causes are mundane and invisible from the browser: a stale
+ * generated password after a restart, or a quoted or space-padded value in
+ * .env. Naming them beats guessing.
+ */
+function explainMismatch(candidate: string): void {
+  const source = generatedPassword ? 'generated for this run' : 'ADMIN_PASSWORD';
+  console.warn(
+    `  Admin login refused. Expected: ${source}, ${adminPassword.length} chars, ` +
+      `fingerprint ${fingerprint(adminPassword)}. ` +
+      `Received: ${candidate.length} chars, fingerprint ${fingerprint(candidate)}.`,
+  );
+
+  if (candidate.trim() !== candidate) {
+    console.warn('    The submitted password has leading or trailing whitespace.');
+  }
+  if (candidate.length === adminPassword.length) {
+    console.warn('    Same length — likely a different value, not a formatting slip.');
+  }
+  if (fingerprint(candidate.trim()) === fingerprint(adminPassword)) {
+    console.warn('    It matches once trimmed: strip the surrounding whitespace.');
+  }
+  if (generatedPassword) {
+    console.warn(
+      '    No ADMIN_PASSWORD is configured, so this password changes on every restart.',
+    );
+  }
 }
 
 const sign = (payload: string): string =>
