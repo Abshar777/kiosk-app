@@ -145,6 +145,21 @@ alive across restarts (otherwise a restart signs admins out).
 
 ### Admin password is rejected
 
+Run the diagnostic on the machine serving the API — it reports facts only, never
+prints a password, and exits non-zero when it finds something that would break the
+login:
+
+```bash
+bash scripts/diagnose-admin.sh
+```
+
+It reads the API port from your `.env` rather than assuming one, and checks the five
+things that actually cause this: a deployment predating the `.env` loading fix, a
+missing `ADMIN_PASSWORD`, a quoted or space-padded value, a stale process still
+serving its own older password, and a process manager whose `env` block overrides
+the file.
+
+
 The startup banner says which case you are in:
 
 | Banner | Meaning |
