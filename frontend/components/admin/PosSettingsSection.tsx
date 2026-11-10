@@ -130,6 +130,11 @@ export function NumberSetting({
   return (
     <NumberField
       className="w-full"
+      // No thousands separator. These are ports, milliseconds and seconds —
+      // identifiers and durations, not quantities. A port rendered as "9,100"
+      // is simply wrong, and an operator reading it back to their acquirer
+      // would be reading the wrong thing.
+      formatOptions={{ useGrouping: false, maximumFractionDigits: 0 }}
       isDisabled={isDisabled}
       maxValue={maxValue}
       minValue={minValue}
@@ -142,8 +147,11 @@ export function NumberSetting({
       value={value}
     >
       <Label className="type-label text-ink mb-2 block">{label}</Label>
-      <NumberField.Group className="min-h-14 w-full">
-        <NumberField.Input className="tabular w-full" />
+      {/* HeroUI lays this group out as a GRID, not a flex row, so the input
+          sat in a 40px track and clipped "120" to "12(" however wide the field
+          was. Give the value the free space and let the buttons size to theirs. */}
+      <NumberField.Group className="min-h-14 w-full grid-cols-[1fr_auto_auto]">
+        <NumberField.Input className="tabular w-full min-w-0" />
         <NumberField.DecrementButton />
         <NumberField.IncrementButton />
       </NumberField.Group>

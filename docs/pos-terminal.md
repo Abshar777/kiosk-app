@@ -111,6 +111,95 @@ Bun fixes it.
 **LAN is unaffected.** Until Bun ships a fix, the options are: use a LAN terminal, or
 run the serial link in a small Node sidecar that the Bun API talks to over a socket.
 
+## Step by step: filling in the card machine settings
+
+Do these in order. Steps 1 and 2 are not optional — the rest is wasted effort
+until they are done.
+
+### Step 1 — Ask Network International to enable ECR mode
+
+Call or email your account manager and ask, in these words:
+
+> Please enable **integrated / ECR mode** on terminal ID `<your TID>`, and send
+> me the **ECR integration specification** for this terminal model.
+
+A terminal in standalone mode — where staff key the amount in by hand — cannot
+be driven by software at all. This is a configuration they push remotely; it is
+not a switch in the terminal's menu. Allow a day or two.
+
+Also ask for a **test/UAT terminal**, so none of this is tried against a
+terminal that moves real money.
+
+### Step 2 — Print the terminal parameters slip
+
+On the terminal itself. The fastest way to get every value on one piece of paper:
+
+1. Press the **MENU** or **FUNC** key (on an Android terminal, open the
+   acquirer's app).
+2. Go to **Settings** → **Terminal info**, or **Reports** → **Parameters**.
+3. Choose **Print parameters** / **Print terminal report**.
+4. If it asks for a supervisor PIN, that is the acquirer's, not yours. Ask them.
+
+The slip lists the **Merchant ID**, **Terminal ID**, firmware version, and the
+communication settings. Keep it — you need it twice.
+
+### Step 3 — Read the terminal's IP address
+
+Still on the terminal: **Settings** → **Communication** (or **Network**) →
+**Ethernet** / **Wi-Fi** → **IP address**.
+
+Then, on your router, **reserve that IP against the terminal's MAC address**
+(usually under "DHCP reservation" or "static lease"). Skip this and the
+terminal will eventually be handed a different address, payments will stop, and
+nothing in the kiosk will explain why.
+
+The terminal must be on the **same network as the kiosk machine**, and ideally a
+segment nothing else can reach. Anything that can reach its port can ask it to
+charge a card.
+
+### Step 4 — Get the ECR port
+
+This is the one value that is **not** on the terminal or the slip. It comes from
+the ECR specification in step 1. Do not guess it — a wrong port fails with the
+same "could not reach the terminal" as a wrong IP, so guessing just costs time.
+
+### Step 5 — Fill in Settings
+
+Admin → Settings → Card machine:
+
+| Field | From |
+| --- | --- |
+| Accept card-present payments | Turn on |
+| How the kiosk reaches the terminal | **Network (LAN)** |
+| Terminal IP address | Step 3 |
+| Port | Step 4 |
+| Merchant ID | Step 2 |
+| Terminal ID | Step 2 |
+| Sale timeout | 120 is sensible; raise it if customers are slow to tap |
+| Status poll interval | Leave at 1000 unless the spec says otherwise |
+| Let the terminal print its own slip | On, unless you want only the kiosk receipt |
+
+Press **Test connection** before saving. It dials the terminal with the values
+on screen, so you can correct a wrong port without committing it.
+
+### Step 6 — Take one test sale
+
+With the **test** terminal and a test card, run a real enrolment through to the
+confirmation screen. Then check three things:
+
+1. The admin **Payments** list shows it as `card_present`, succeeded.
+2. The amount matches the course price exactly.
+3. The terminal's own slip and the kiosk receipt agree.
+
+Only then point the kiosk at the live terminal.
+
+### If you do not have the terminal yet
+
+Set the transport to **Mock** and everything above works with no hardware, so
+the flow can be demonstrated and the rest of the kiosk tested. Outcomes follow
+the amount: ending `.00` approves, `.01` declines, `.02` times out, `.03` lets a
+cancel win.
+
 ## Where each setting comes from
 
 Admin → Settings → Card machine. None of these are guessable — each has one source.
