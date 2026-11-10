@@ -162,6 +162,11 @@ const en = {
   "receipt.thanks": "Thank you for enrolling.",
   "receipt.support": "Support",
 
+  "pwa.offline": "No connection — the kiosk can't reach the server",
+  "pwa.installTitle": "Install this kiosk",
+  "pwa.installBody": "Runs full screen and starts faster.",
+  "pwa.install": "Install",
+
   "common.loading": "Loading",
   "common.required": "Required",
   "common.free": "Free",
@@ -376,6 +381,11 @@ const ar: Record<TranslationKey, string> = {
   "receipt.issued": "تاريخ الإصدار",
   "receipt.thanks": "شكراً لتسجيلك.",
   "receipt.support": "الدعم",
+
+  "pwa.offline": "لا يوجد اتصال — لا يمكن للجهاز الوصول إلى الخادم",
+  "pwa.installTitle": "تثبيت هذا التطبيق",
+  "pwa.installBody": "يعمل بملء الشاشة ويبدأ أسرع.",
+  "pwa.install": "تثبيت",
 
   "common.loading": "جارٍ التحميل",
   "common.required": "مطلوب",

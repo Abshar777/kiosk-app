@@ -217,13 +217,59 @@ export const api = {
 // ---------------------------------------------------------------------------
 
 /**
- * Admin calls authenticate with an httpOnly session cookie, so there is no
- * token to attach here — and deliberately so. The previous design read
- * NEXT_PUBLIC_ADMIN_TOKEN, which Next.js inlines into the client bundle, which
- * meant the admin secret shipped in readable JavaScript to every visitor.
+ * Admin session, held two ways.
+ *
+ * The httpOnly cookie is the safer carrier and is always sent. It is also
+ * useless when the admin UI and the API are on different sites, because a
+ * SameSite=Strict cookie is not sent cross-site — so the same signed token is
+ * also kept here and sent as a bearer header.
+ *
+ * The trade is real and worth stating: a value in localStorage is readable by
+ * any script on the page, so an XSS becomes a stolen admin session, which the
+ * cookie alone would have survived. Deploy the API behind the same origin and
+ * the bearer path is never used.
+ *
+ * It is NOT a NEXT_PUBLIC_* value: that would be compiled into the bundle and
+ * shipped to every visitor. This is issued per login and expires.
  */
-const adminRequest = <T>(path: string, options: RequestOptions = {}) =>
-  request<T>(path, { ...options, credentials: "include" });
+const TOKEN_KEY = "kiosk.adminToken";
+
+export const adminSession = {
+  get(): string | null {
+    try {
+      return window.localStorage.getItem(TOKEN_KEY);
+    } catch {
+      // Private mode or blocked storage: fall back to the cookie.
+      return null;
+    }
+  },
+  set(token: string): void {
+    try {
+      window.localStorage.setItem(TOKEN_KEY, token);
+    } catch {
+      /* cookie still carries the session when it can */
+    }
+  },
+  clear(): void {
+    try {
+      window.localStorage.removeItem(TOKEN_KEY);
+    } catch {
+      /* nothing to clean up */
+    }
+  },
+};
+
+const adminRequest = <T>(path: string, options: RequestOptions = {}) => {
+  const token = typeof window === "undefined" ? null : adminSession.get();
+  return request<T>(path, {
+    ...options,
+    credentials: "include",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers ?? {}),
+    },
+  });
+};
 
 export interface EnrollmentListItem extends Enrollment {
   paymentStatus: string | null;
@@ -239,23 +285,27 @@ export interface PaymentListItem extends Payment {
 }
 
 export const adminAuth = {
-  login: (password: string) =>
-    request<{ ok: true }>("/api/admin/login", {
+  login: async (password: string) => {
+    const result = await request<{ ok: true; token: string }>("/api/admin/login", {
       method: "POST",
       body: { password },
       credentials: "include",
-    }),
+    });
+    if (result.token) adminSession.set(result.token);
+    return result;
+  },
 
-  logout: () =>
-    request<{ ok: true }>("/api/admin/logout", {
-      method: "POST",
-      credentials: "include",
-    }),
+  logout: async () => {
+    try {
+      return await adminRequest<{ ok: true }>("/api/admin/logout", { method: "POST" });
+    } finally {
+      // Cleared even if the request failed: leaving a token behind after the
+      // operator pressed Sign out is the worse outcome.
+      adminSession.clear();
+    }
+  },
 
-  session: () =>
-    request<{ isAuthenticated: boolean }>("/api/admin/session", {
-      credentials: "include",
-    }),
+  session: () => adminRequest<{ isAuthenticated: boolean }>("/api/admin/session"),
 };
 
 export const adminApi = {
@@ -366,6 +416,7 @@ export const adminApi = {
     const response = await fetch(new URL("/api/admin/uploads", apiBase()), {
       method: "POST",
       credentials: "include",
+      headers: adminSession.get() ? { Authorization: `Bearer ${adminSession.get()}` } : {},
       body: form,
     });
     if (!response.ok) {

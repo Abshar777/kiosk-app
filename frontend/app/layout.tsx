@@ -15,7 +15,12 @@ export const metadata: Metadata = {
   description: "Browse courses, enroll and pay in a few taps.",
   // The Delta mark as an SVG: one scalable file for every icon size, and it
   // inherits ink colour via currentColor instead of needing a filter.
-  icons: { icon: "/delta-mark.svg" },
+  icons: {
+    icon: "/delta-mark.svg",
+    apple: "/icons/apple-touch-icon.png",
+  },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "Enroll", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {

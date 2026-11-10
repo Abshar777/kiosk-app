@@ -180,9 +180,25 @@ function readCookie(req: Request, name: string): string | null {
   return null;
 }
 
+/**
+ * Accepts the session either way.
+ *
+ * The cookie is the better option and stays the default: httpOnly means a
+ * cross-site script cannot read it. But a SameSite=Strict cookie is simply not
+ * sent when the admin UI and the API sit on different sites — a frontend on
+ * Vercel calling an API on its own domain — and no amount of CORS changes that.
+ * The bearer token exists for exactly that deployment. Same signed value, same
+ * expiry; only the carrier differs.
+ */
 export function hasValidSession(req: Request): boolean {
-  const token = readCookie(req, SESSION_COOKIE);
-  return token !== null && isValidSessionToken(token);
+  const header = req.headers.get('authorization');
+  if (header?.startsWith('Bearer ')) {
+    const token = header.slice(7).trim();
+    if (token && isValidSessionToken(token)) return true;
+  }
+
+  const cookie = readCookie(req, SESSION_COOKIE);
+  return cookie !== null && isValidSessionToken(cookie);
 }
 
 /**

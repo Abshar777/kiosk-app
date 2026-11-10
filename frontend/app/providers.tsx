@@ -2,6 +2,9 @@
 
 import type { AppConfig } from "@course-lms/shared";
 import { createContext, useContext, useEffect, useState } from "react";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { OfflineBanner } from "@/components/pwa/OfflineBanner";
+import { ServiceWorkerRegistrar } from "@/components/pwa/ServiceWorkerRegistrar";
 import { Ripple } from "@/components/ui/Ripple";
 import { api } from "@/lib/api";
 import { I18nProvider } from "@/lib/i18n/provider";
@@ -103,6 +106,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <I18nProvider defaultLocale={value.config.kiosk.defaultLanguage as Locale}>
         <ThemeReset />
         <Ripple />
+        <ServiceWorkerRegistrar />
+        <OfflineBanner />
+        <InstallPrompt />
         {children}
       </I18nProvider>
     </ConfigContext.Provider>

@@ -7,6 +7,7 @@ mocking. Start both servers first (`bun run dev`), then:
 ADMIN_PASSWORD=<the password the API printed> bun scripts/verify/auth.mjs
 ADMIN_PASSWORD=<...> bun scripts/verify/pos.mjs        # card-present sale, end to end
 ADMIN_PASSWORD=<...> bun scripts/verify/admin.mjs      # every admin page, in a browser
+bun scripts/verify/pwa.mjs                             # manifest, icons, service worker
 bun scripts/verify/lan.mjs                             # LAN transport, incl. split frames
 ```
 

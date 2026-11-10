@@ -21,9 +21,14 @@ route.post('/api/admin/login', async ({ req }) => {
     throw unauthorized('Incorrect password');
   }
 
+  const token = createSessionToken();
+
+  // Returned in the body as well as the cookie: a browser on another site
+  // cannot keep the cookie, so it holds this and sends it as a bearer token
+  // instead. Same-origin callers can ignore it and let the cookie work.
   return json(
-    { ok: true },
-    { headers: { 'Set-Cookie': sessionCookieHeader(req, createSessionToken()) } },
+    { ok: true, token },
+    { headers: { 'Set-Cookie': sessionCookieHeader(req, token) } },
   );
 });
 

@@ -29,7 +29,7 @@ import {
   RefreshIcon,
   XCircleIcon,
 } from "@/components/icons";
-import { API_URL, ApiRequestError } from "@/lib/api";
+import { adminSession, API_URL, ApiRequestError } from "@/lib/api";
 import { useI18n } from "@/lib/i18n/provider";
 
 /* -------------------------------------------------------------------------- */
@@ -267,7 +267,10 @@ async function posRequest<T>(path: string, body?: unknown): Promise<T> {
       // there is no token to attach. This previously read
       // NEXT_PUBLIC_ADMIN_TOKEN, which no longer authenticates anything.
       credentials: "include",
-      headers: hasBody ? { "Content-Type": "application/json" } : {},
+      headers: {
+        ...(adminSession.get() ? { Authorization: `Bearer ${adminSession.get()}` } : {}),
+        ...(hasBody ? { "Content-Type": "application/json" } : {}),
+      },
       ...(hasBody ? { body: JSON.stringify(body) } : {}),
     });
   } catch {

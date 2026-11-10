@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Offline — Delta Academy</title>
+    <style>
+      :root { color-scheme: light; }
+      body {
+        margin: 0; min-height: 100dvh; display: grid; place-items: center;
+        background: #f2f4f7; color: #191c22; text-align: center; padding: 24px;
+        font-family: "DM Sans", system-ui, sans-serif;
+      }
+      .card { background: #fff; border-radius: 24px; padding: 48px 40px; max-width: 420px; }
+      h1 { font-size: 32px; line-height: 38px; letter-spacing: -0.02em; margin: 24px 0 8px; }
+      p { font-size: 18px; line-height: 28px; color: #6b7280; margin: 0; }
+      img { width: 72px; height: 72px; }
+      button {
+        margin-top: 32px; width: 100%; min-height: 64px; border: 0; border-radius: 16px;
+        background: #101418; color: #fff; font: inherit; font-weight: 600; cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <img alt="" src="/icons/icon-192.png" />
+      <h1>No connection</h1>
+      <p>The kiosk can't reach the server. Please tell a member of staff.</p>
+      <button onclick="location.reload()" type="button">Try again</button>
+    </div>
+    <script>
+      // Reload by itself the moment the network returns, so a kiosk left alone
+      // recovers without anyone touching it.
+      addEventListener("online", () => location.reload());
+    </script>
+  </body>
+</html>
