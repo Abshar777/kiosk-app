@@ -67,14 +67,31 @@ for file in .env .env.local backend/.env; do
     raw=$(grep -E '^[[:space:]]*ADMIN_PASSWORD=' "$file" | tail -1)
     raw="${raw#*=}"
     found_password=1
-    printf '   %-16s ADMIN_PASSWORD set, %s chars' "$file" "${#raw}"
+    quoted=0
     case "$raw" in
-      \"*\"|\'*\') printf '  [QUOTED — remove the quotes]'; problems=$((problems + 1)) ;;
+      \"*\"|\'*\') quoted=1 ;;
     esac
-    case "$raw" in
-      *' ') printf '  [TRAILING SPACE]'; problems=$((problems + 1)) ;;
-    esac
-    echo
+
+    if [ "$quoted" -eq 1 ]; then
+      # Strip the quotes to report the password's real length.
+      inner="${raw%?}"; inner="${inner#?}"
+      printf '   %-16s ADMIN_PASSWORD set, %s chars, quoted\n' "$file" "${#inner}"
+    else
+      printf '   %-16s ADMIN_PASSWORD set, %s chars' "$file" "${#raw}"
+      case "$raw" in
+        *'#'*)
+          # An unquoted '#' opens a comment, so the password is only the part
+          # before it — the single most common cause of "the password is wrong".
+          before="${raw%%#*}"
+          printf '  [CUT AT # — only %s chars reach the API; quote it]' "${#before}"
+          problems=$((problems + 1))
+          ;;
+      esac
+      case "$raw" in
+        *' ') printf '  [TRAILING SPACE]'; problems=$((problems + 1)) ;;
+      esac
+      echo
+    fi
   else
     printf '   %-16s exists, no ADMIN_PASSWORD\n' "$file"
   fi

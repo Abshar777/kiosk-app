@@ -170,6 +170,18 @@ The startup banner says which case you are in:
 A refused login logs why — lengths and fingerprints of both sides, never the
 passwords themselves — including whether it would match once trimmed.
 
+**Quote any value containing `#`.** An unquoted `#` opens a comment, so the
+first line below sets the password to `abc`, not `abc#def`:
+
+```bash
+ADMIN_PASSWORD=abc#def       # password is "abc"
+ADMIN_PASSWORD="abc#def"     # password is "abc#def"
+```
+
+Every dotenv parser behaves this way. The API warns at startup when it finds a
+value cut short like this, because the symptom is indistinguishable from simply
+having the wrong password.
+
 If a password that should be right keeps failing, check that a stale process is
 not still holding the port. The old one keeps serving, with its old password,
 while the new one fails to bind:

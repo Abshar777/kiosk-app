@@ -13,6 +13,13 @@ import { fileURLToPath } from 'node:url';
  * Resolved from this file's own location, not cwd, so it behaves the same from
  * a shell, a systemd unit or a Windows service.
  */
+/**
+ * Keys whose unquoted value was cut short by a '#'. Surfaced at startup so a
+ * password that silently lost half of itself is visible immediately, instead of
+ * presenting as "the password is wrong".
+ */
+export const truncatedByComment = new Set<string>();
+
 function loadRootEnv(): void {
   const backendRoot = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
   const repoRoot = dirname(backendRoot);
@@ -32,17 +39,30 @@ function loadRootEnv(): void {
         if (separator === -1) continue;
 
         const key = line.slice(0, separator).trim();
-        if (!key || key in process.env) continue;
+        if (!key) continue;
 
-        let value = line.slice(separator + 1).trim();
-        // Strip matching surrounding quotes: ADMIN_PASSWORD="secret" should not
-        // make the quotes part of the password.
-        if (
-          (value.startsWith('"') && value.endsWith('"')) ||
-          (value.startsWith("'") && value.endsWith("'"))
-        ) {
-          value = value.slice(1, -1);
+        const raw = line.slice(separator + 1).trim();
+        const quoted =
+          (raw.startsWith('"') && raw.endsWith('"') && raw.length > 1) ||
+          (raw.startsWith("'") && raw.endsWith("'") && raw.length > 1);
+
+        let value: string;
+        if (quoted) {
+          value = raw.slice(1, -1);
+        } else {
+          // An unquoted '#' opens a comment, so KEY=abc#def is the value
+          // 'abc'. Every dotenv parser behaves this way, Bun's
+          // included — matching it here keeps one file from meaning two
+          // different things depending on which loader reached it first.
+          const comment = raw.indexOf('#');
+          value = (comment === -1 ? raw : raw.slice(0, comment)).trim();
+          if (comment !== -1 && value !== '') truncatedByComment.add(key);
         }
+
+        // Recorded even when the variable is already set, because Bun parses
+        // .env before any of this runs: the value is long gone by now, but the
+        // raw line still shows why it is shorter than it looks.
+        if (key in process.env) continue;
         process.env[key] = value;
       }
     }

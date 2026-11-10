@@ -1,4 +1,5 @@
 import { randomBytes, createHmac, createHash, timingSafeEqual } from 'node:crypto';
+import { truncatedByComment } from './loadEnv.ts';
 
 /**
  * Admin authentication.
@@ -44,8 +45,24 @@ const sessionSecret = process.env.ADMIN_SESSION_SECRET ?? randomBytes(32).toStri
 const fingerprint = (value: string): string =>
   createHash('sha256').update(value).digest('hex').slice(0, 8);
 
+/**
+ * An unquoted '#' silently halves a value, and the result looks exactly like a
+ * wrong password. Say so plainly rather than letting it be debugged twice.
+ */
+function warnAboutTruncation(): void {
+  for (const key of truncatedByComment) {
+    console.warn(
+      `  ⚠ ${key} in .env is cut short by a '#': everything from the '#' onward ` +
+        `is read as a comment.`,
+    );
+    console.warn(`    Quote it to keep the whole value:  ${key}="your#value"`);
+  }
+}
+
 /** Prints the generated password once, so an operator is never locked out. */
 export function announceAdminPassword(): void {
+  warnAboutTruncation();
+
   if (!generatedPassword) {
     console.log(
       `  Admin: password set from ADMIN_PASSWORD ` +
@@ -112,6 +129,19 @@ function explainMismatch(candidate: string): void {
   if (generatedPassword) {
     console.warn(
       '    No ADMIN_PASSWORD is configured, so this password changes on every restart.',
+    );
+  }
+  if (truncatedByComment.has('ADMIN_PASSWORD')) {
+    console.warn(
+      "    ADMIN_PASSWORD in .env is cut short by an unquoted '#'. Quote it: " +
+        'ADMIN_PASSWORD="your#value"',
+    );
+  } else if (candidate.startsWith(adminPassword) && candidate.length > adminPassword.length) {
+    // The submitted value begins with the configured one — the classic shape of
+    // a .env value that lost its tail to a comment or a stray space.
+    console.warn(
+      '    What you typed starts with the configured password and is longer: the ' +
+        'value in .env is probably truncated.',
     );
   }
 }
