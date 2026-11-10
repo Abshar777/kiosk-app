@@ -116,19 +116,83 @@ run the serial link in a small Node sidecar that the Bun API talks to over a soc
 Do these in order. Steps 1 and 2 are not optional — the rest is wasted effort
 until they are done.
 
-### Step 1 — Ask Network International to enable ECR mode
+### Step 0 — Work out who to ask
 
-Call or email your account manager and ask, in these words:
+You need a human at Network International who can change your terminal's
+configuration. In order of how likely they are to get it done:
 
-> Please enable **integrated / ECR mode** on terminal ID `<your TID>`, and send
-> me the **ECR integration specification** for this terminal model.
+1. **Your Relationship Manager / account manager.** If your business was
+   onboarded by a named person, they are the fastest route. Their details are
+   on your onboarding paperwork or merchant agreement.
+2. **The merchant helpdesk.** Toll-free **800 4448** inside the UAE,
+   **+971 4 597 4000** from outside. Ask to be put through to **POS / terminal
+   integration support** — the first-line agent handles faulty terminals, not
+   ECR enablement, so say "ECR" early.
+3. **Email.** `MerchantHD@network.ae` for POS and merchant-account queries;
+   SME accounts may be directed to `sbcustomer@network.ae`.
+4. **The Get Help form** at `network.ae/en/contact-us/get-help`, quoting your
+   Merchant ID.
 
-A terminal in standalone mode — where staff key the amount in by hand — cannot
-be driven by software at all. This is a configuration they push remotely; it is
-not a switch in the terminal's menu. Allow a day or two.
+> These numbers and addresses were not verifiable directly — network.ae blocks
+> automated requests — so confirm them against the **sticker on your terminal**,
+> your **merchant statement**, or your onboarding paperwork, all of which carry
+> the support line for your own account. Those are more reliable than any
+> published list anyway.
 
-Also ask for a **test/UAT terminal**, so none of this is tried against a
-terminal that moves real money.
+**Have these ready before you call**, because they will ask:
+
+- Merchant ID (MID) and Terminal ID (TID) — from the slip in step 2, the
+  terminal's sticker, or your statement
+- Your registered trading name, exactly as on the merchant agreement
+- The terminal's make and model
+- Who you are, and that you are authorised to request configuration changes
+
+### Step 1 — Ask for ECR mode and the specification
+
+Phrase it in their language. "I want to connect my terminal to software" invites
+a conversation about e-commerce; the words below do not.
+
+> Subject: ECR / integrated mode request — MID `<your MID>`, TID `<your TID>`
+>
+> Hello,
+>
+> We operate a self-service enrolment kiosk and want to take card-present
+> payments on our existing terminal, driven by our own software rather than
+> keyed in by staff.
+>
+> Please could you:
+>
+> 1. Enable **integrated (ECR) mode** on terminal ID `<your TID>`.
+> 2. Send the **ECR integration specification** for this terminal model —
+>    specifically the message format, the TCP port the terminal listens on,
+>    and whether it supports LAN, serial, or both.
+> 3. Confirm whether **refunds** can be initiated over ECR, or only from the
+>    merchant portal.
+> 4. Advise on a **test / UAT terminal** and any **certification** required
+>    before we go live.
+>
+> Trading name: `<your registered name>`
+> Merchant ID: `<your MID>`
+> Terminal model: `<make and model>`
+>
+> Thank you,
+> `<your name and role>`
+
+**What you should get back:** a confirmation that ECR is enabled on that TID,
+and a specification document — usually a PDF, often under NDA. If they send you
+N-Genius Online documentation instead, that is the **wrong product** — it is
+their e-commerce gateway, not the terminal. Reply and say you need the **ECR /
+terminal integration** spec.
+
+**Expect this to take days, not hours**, and expect to chase it once. Most
+acquirers treat ECR enablement as a scheduled change rather than a support
+ticket.
+
+> **Why this blocks everything.** A terminal in standalone mode — where staff
+> key the amount in by hand — cannot be driven by software at all, whatever is
+> built here. It is a configuration the acquirer pushes remotely, not a switch
+> in the terminal's menu. People routinely discover this *after* building the
+> integration.
 
 ### Step 2 — Print the terminal parameters slip
 
